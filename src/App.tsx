@@ -1,52 +1,160 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ArrowRight, BrainCircuit, Database, GitBranch, LoaderCircle, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
 import { clearModelCache, loadModel, predictNextToken } from './inference';
 import type { TokenCandidate } from './inference';
 import { MODELS } from './models';
 import './App.css';
 
-interface Branch { id: number; text: string; note: string }
+interface StoryNode {
+  id: string;
+  parentId: string | null;
+  token: string;
+  options: TokenCandidate[];
+  children: string[];
+}
+
+type StoryTree = Record<string, StoryNode>;
+
+const ROOT_ID = 'root';
 const DEFAULT_PROMPT = 'Once upon a time, a small robot discovered';
 const visibleToken = (token: string) => token.replaceAll(' ', '·').replaceAll('\n', '↵');
+const newTree = (): StoryTree => ({ [ROOT_ID]: { id: ROOT_ID, parentId: null, token: '', options: [], children: [] } });
+
+function pathTo(tree: StoryTree, nodeId: string) {
+  const path: StoryNode[] = [];
+  let node = tree[nodeId];
+  while (node?.parentId) {
+    path.unshift(node);
+    node = tree[node.parentId];
+  }
+  return path;
+}
+
+function deepestDescendant(tree: StoryTree, nodeId: string): string {
+  const children = tree[nodeId]?.children ?? [];
+  return children.length ? deepestDescendant(tree, children.at(-1)!) : nodeId;
+}
+
+function contextLabel(tree: StoryTree, nodeId: string, prompt: string) {
+  const text = prompt + pathTo(tree, nodeId).map((node) => node.token).join('');
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  return `${words.length > 3 ? '… ' : ''}${words.slice(-3).join(' ')}`;
+}
+
+function applyTemperature(candidates: TokenCandidate[], temperature: number) {
+  if (candidates.length === 0) return candidates;
+  const visibleMass = candidates.reduce((sum, candidate) => sum + Math.exp(candidate.logprob), 0);
+  const bestLogprob = Math.max(...candidates.map((candidate) => candidate.logprob));
+  const weights = candidates.map((candidate) => temperature === 0 ? Number(candidate.logprob === bestLogprob) : Math.exp((candidate.logprob - bestLogprob) / temperature));
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+  return candidates.map((candidate, index) => {
+    const probability = visibleMass * weights[index] / totalWeight;
+    return { ...candidate, probability, logprob: probability > 0 ? Math.log(probability) : Number.NEGATIVE_INFINITY };
+  });
+}
 
 function App() {
   const [modelId, setModelId] = useState(MODELS[0].id);
   const [loadedModelId, setLoadedModelId] = useState<string | null>(null);
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
-  const [generated, setGenerated] = useState('');
-  const [candidates, setCandidates] = useState<TokenCandidate[]>([]);
+  const [tree, setTree] = useState<StoryTree>(newTree);
+  const [activeLeafId, setActiveLeafId] = useState(ROOT_ID);
+  const [selectedNodeId, setSelectedNodeId] = useState(ROOT_ID);
   const [temperature, setTemperature] = useState(0.8);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'idle' | 'loading' | 'thinking'>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [branches, setBranches] = useState<Branch[]>([]);
+  const nextNodeId = useRef(1);
+  const treeRef = useRef(tree);
+  const selectedNodeRef = useRef(selectedNodeId);
+  const resampleInFlight = useRef(false);
+  const pendingTemperature = useRef<number | null>(null);
+  treeRef.current = tree;
+  selectedNodeRef.current = selectedNodeId;
   const model = MODELS.find((item) => item.id === modelId) ?? MODELS[0];
   const isLoaded = loadedModelId === modelId;
+  const activePath = pathTo(tree, activeLeafId);
+  const activePathIds = new Set(activePath.map((node) => node.id));
+  const selectedIndex = activePath.findIndex((node) => node.id === selectedNodeId);
+  const optionSourceId = selectedNodeId === ROOT_ID ? ROOT_ID : tree[selectedNodeId]?.parentId ?? ROOT_ID;
+  const candidates = applyTemperature(tree[optionSourceId]?.options ?? [], temperature);
+  const selectedToken = selectedNodeId === ROOT_ID ? null : tree[selectedNodeId]?.token;
 
-  const reset = () => { setGenerated(''); setCandidates([]); setBranches([]); setError(null); };
+  const reset = () => {
+    const emptyTree = newTree();
+    pendingTemperature.current = null;
+    treeRef.current = emptyTree;
+    selectedNodeRef.current = ROOT_ID;
+    setTree(emptyTree); setActiveLeafId(ROOT_ID); setSelectedNodeId(ROOT_ID); setError(null);
+  };
   async function handleLoad() {
     setStatus('loading'); setError(null); setProgress(0);
     try { await loadModel(model, setProgress); setLoadedModelId(modelId); }
     catch (caught) { setError(caught instanceof Error ? caught.message : String(caught)); }
     finally { setStatus('idle'); }
   }
+  async function sampleFrom(sourceId: string, nextTemperature: number) {
+      const sourceTree = treeRef.current;
+      const sourceText = prompt + pathTo(sourceTree, sourceId).map((node) => node.token).join('');
+      const next = await predictNextToken(sourceText, nextTemperature);
+      const sampled = next.find((item) => item.sampled) ?? next[0];
+      const currentTree = treeRef.current;
+      const source = currentTree[sourceId];
+      if (!source) throw new Error('That story position is no longer available.');
+      const existingId = source.children.find((id) => currentTree[id].token === sampled.token);
+      const destinationId = existingId ?? `node-${nextNodeId.current++}`;
+      const destination = existingId ? currentTree[existingId] : { id: destinationId, parentId: source.id, token: sampled.token, options: [], children: [] };
+      const updatedTree = { ...currentTree, [source.id]: { ...source, options: next, children: existingId ? source.children : [...source.children, destinationId] }, [destinationId]: destination };
+      treeRef.current = updatedTree;
+      selectedNodeRef.current = destinationId;
+      setTree(updatedTree);
+      setActiveLeafId(deepestDescendant(updatedTree, destinationId));
+      setSelectedNodeId(destinationId);
+  }
   async function handleStep() {
     if (!isLoaded) return handleLoad();
     setStatus('thinking'); setError(null);
     try {
-      const next = await predictNextToken(prompt + generated, temperature);
-      const sampled = next.find((item) => item.sampled) ?? next[0];
-      setGenerated((current) => current + sampled.token);
-      setCandidates(next);
+      await sampleFrom(selectedNodeId, temperature);
     } catch (caught) { setError(caught instanceof Error ? caught.message : String(caught)); }
     finally { setStatus('idle'); }
   }
+  async function handleTemperatureChange(nextTemperature: number) {
+    setTemperature(nextTemperature);
+    if (!isLoaded || selectedNodeRef.current === ROOT_ID) return;
+    pendingTemperature.current = nextTemperature;
+    if (resampleInFlight.current) return;
+    resampleInFlight.current = true;
+    setStatus('thinking'); setError(null);
+    try {
+      while (pendingTemperature.current !== null) {
+        const queuedTemperature = pendingTemperature.current;
+        pendingTemperature.current = null;
+        const selected = treeRef.current[selectedNodeRef.current];
+        if (!selected?.parentId) break;
+        await sampleFrom(selected.parentId, queuedTemperature);
+      }
+    } catch (caught) { setError(caught instanceof Error ? caught.message : String(caught)); }
+    finally { resampleInFlight.current = false; setStatus('idle'); }
+  }
   function chooseCandidate(candidate: TokenCandidate) {
-    const sampled = candidates.find((item) => item.sampled);
-    if (!sampled || candidate.token === sampled.token) return;
-    setBranches((current) => [...current, { id: Date.now(), text: prompt + generated, note: `sampled ${visibleToken(sampled.token)}` }]);
-    setGenerated((current) => current.slice(0, -sampled.token.length) + candidate.token);
-    setCandidates((current) => current.map((item) => ({ ...item, sampled: item.token === candidate.token })));
+    const source = tree[optionSourceId];
+    if (!source) return;
+    const existingId = source.children.find((id) => tree[id].token === candidate.token);
+    const destinationId = existingId ?? `node-${nextNodeId.current++}`;
+    if (!existingId) {
+      setTree((current) => ({
+        ...current,
+        [source.id]: { ...current[source.id], children: [...current[source.id].children, destinationId] },
+        [destinationId]: { id: destinationId, parentId: source.id, token: candidate.token, options: [], children: [] },
+      }));
+    }
+    setActiveLeafId(existingId ? deepestDescendant(tree, existingId) : destinationId);
+    setSelectedNodeId(destinationId);
+  }
+  function visitNode(nodeId: string) {
+    setActiveLeafId(deepestDescendant(tree, nodeId));
+    setSelectedNodeId(nodeId);
   }
   async function clearCache() {
     setStatus('loading');
@@ -77,29 +185,36 @@ function App() {
         </button>
         <p className="cache-copy">The first load comes from Hugging Face. Later visits reuse the browser cache.</p>
         <button className="text-button" onClick={clearCache} type="button"><Trash2 size={15} /> Clear model cache</button>
-        <div className="section-heading temperature-heading"><span>02</span><h2>Set randomness</h2></div>
-        <label className="temperature-label" htmlFor="temperature">Temperature <strong>{temperature.toFixed(1)}</strong></label>
-        <input id="temperature" max="1.5" min="0" onChange={(event) => setTemperature(Number(event.target.value))} step="0.1" type="range" value={temperature} />
-        <div className="range-labels"><span>steady</span><span>surprising</span></div>
       </aside>
       <div className="analysis-board">
         <div className="board-toolbar"><div><span className={`status-dot ${isLoaded ? 'ready' : ''}`} />{isLoaded ? model.name : 'No model loaded'}</div><button aria-label="Reset generation" onClick={reset} title="Reset generation" type="button"><RotateCcw size={17} /></button></div>
         <label className="prompt-label" htmlFor="prompt">Start the text</label>
         <textarea id="prompt" onChange={(event) => { setPrompt(event.target.value); reset(); }} rows={3} value={prompt} />
-        <div className="generated-text" aria-live="polite"><span>{prompt}</span><strong>{generated}</strong>{!generated && <em>The model’s tokens will appear here.</em>}</div>
-        <div className="step-row"><button className="step-button" disabled={status !== 'idle'} onClick={handleStep} type="button">{status === 'thinking' ? <LoaderCircle className="spin" size={19} /> : <ArrowRight size={19} />}{isLoaded ? 'Step one token' : 'Load model'}</button><span>One token may be a word, part of a word, punctuation, or a space.</span></div>
+        <div className="generated-text" aria-live="polite"><span>{prompt}</span>{activePath.map((node, index) => <button className={`story-token ${node.id === selectedNodeId ? 'selected' : ''} ${selectedIndex >= 0 && index > selectedIndex ? 'future' : ''}`} key={node.id} onClick={() => setSelectedNodeId(node.id)} title={`Inspect ${visibleToken(node.token)}`} type="button">{node.token}</button>)}{activePath.length === 0 && <em>The model’s tokens will appear here.</em>}</div>
+        <div className="generation-controls">
+          <div className="step-row"><button className="step-button" disabled={status !== 'idle'} onClick={handleStep} type="button">{status === 'thinking' ? <LoaderCircle className="spin" size={19} /> : <ArrowRight size={19} />}{isLoaded ? selectedNodeId === activeLeafId ? 'Step one token' : 'Branch from here' : 'Load model'}</button><span>Click a generated token to inspect the odds that produced it. Later tokens turn gray but stay available.</span></div>
+          <div className="randomness-control">
+            <label className="temperature-label" htmlFor="temperature">Randomness <strong>{temperature.toFixed(1)}</strong></label>
+            <input id="temperature" max="1.5" min="0" onChange={(event) => void handleTemperatureChange(Number(event.target.value))} step="0.1" type="range" value={temperature} />
+            <div className="range-labels"><span>predictable</span><span>varied</span></div>
+          </div>
+        </div>
         {error && <div className="error-message" role="alert">{error}</div>}
         <section className="probability-panel">
-          <div className="panel-title"><div><Sparkles size={18} /><h2>What the model considered</h2></div><span>click an alternative to branch</span></div>
-          {candidates.length === 0 ? <div className="empty-probabilities"><div className="ghost-bars"><i /><i /><i /><i /></div><p>Step forward to reveal the next-token landscape.</p></div> : <div className="candidate-list">{candidates.map((candidate) => <button className={candidate.sampled ? 'sampled' : ''} key={`${candidate.token}-${candidate.logprob}`} onClick={() => chooseCandidate(candidate)} type="button">
-            <code>{visibleToken(candidate.token) || '∅'}</code><span className="probability-track"><i style={{ width: `${Math.max(1, candidate.probability * 100)}%` }} /></span><strong>{(candidate.probability * 100).toFixed(1)}%</strong><small>log p {candidate.logprob.toFixed(2)}</small>{candidate.sampled && <b>chosen</b>}
+          <div className="panel-title"><div><Sparkles size={18} /><h2>{selectedToken ? `Odds for ${visibleToken(selectedToken)}` : 'What the model considered'}</h2></div><span>click an alternative to branch</span></div>
+          {candidates.length === 0 ? <div className="empty-probabilities"><div className="ghost-bars"><i /><i /><i /><i /></div><p>Step forward to reveal the next-token landscape.</p></div> : <div className="candidate-list">{candidates.map((candidate) => <button className={candidate.token === selectedToken ? 'sampled' : ''} key={`${candidate.token}-${candidate.logprob}`} onClick={() => chooseCandidate(candidate)} type="button">
+            <code>{visibleToken(candidate.token) || '∅'}</code><span className="probability-track"><i style={{ width: `${Math.max(1, candidate.probability * 100)}%` }} /></span><strong>{(candidate.probability * 100).toFixed(1)}%</strong><small>log p {candidate.logprob.toFixed(2)}</small>{candidate.token === selectedToken && <b>viewing</b>}
           </button>)}</div>}
         </section>
       </div>
       <aside className="branches">
-        <div className="section-heading"><span>03</span><h2>Explored paths</h2></div>
-        <div className="current-branch"><GitBranch size={18} /><div><strong>Current path</strong><p>{generated || 'No tokens yet'}</p></div></div>
-        {branches.length === 0 ? <p className="branch-empty">Choose a different token and the path you left will stay here.</p> : branches.map((branch) => <button key={branch.id} onClick={() => { setPrompt(branch.text); setGenerated(''); setCandidates([]); }} type="button"><span>{branch.note}</span><p>{branch.text.slice(-80)}</p></button>)}
+        <div className="section-heading"><span>02</span><h2>Story tree</h2></div>
+        <div className="current-branch"><GitBranch size={18} /><div><strong>{selectedNodeId === activeLeafId ? 'Current ending' : 'Earlier position'}</strong><p>{selectedNodeId === ROOT_ID ? 'Before the first token' : contextLabel(tree, selectedNodeId, prompt)}</p></div></div>
+        {tree[ROOT_ID].children.length === 0 ? <p className="branch-empty">Generate a token, then choose alternatives to grow nested paths.</p> : <div className="tree-list">{tree[ROOT_ID].children.map(function renderNode(nodeId): React.ReactNode {
+          const node = tree[nodeId];
+          const orderedChildren = [...node.children].sort((left, right) => Number(activePathIds.has(right)) - Number(activePathIds.has(left)));
+          return <div className="tree-node" key={node.id}><button className={`${node.id === selectedNodeId ? 'selected' : ''} ${activePathIds.has(node.id) ? 'active-path' : ''}`} onClick={() => visitNode(node.id)} title={visibleToken(node.token)} type="button"><span>{visibleToken(node.token) || '∅'}</span><p>{contextLabel(tree, node.id, prompt)}</p></button>{orderedChildren.length > 0 && <div className={`tree-children ${orderedChildren.length === 1 ? 'continuation' : 'variations'}`}>{orderedChildren.map(renderNode)}</div>}</div>;
+        })}</div>}
       </aside>
     </section>
     <section className="plain-language"><p className="eyebrow">Keep this distinction in view</p><div><h2>The model offers odds.</h2><h2>The decoder makes the pick.</h2></div><p>A high number means “this token fits patterns I learned.” It does not mean the token is true, wise, or even useful.</p></section>
