@@ -139,7 +139,14 @@ function App() {
     const frame = window.requestAnimationFrame(() => {
       document.querySelector(`[data-guide-target="${guideCallout.target}"] .guide-callout`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
-    return () => window.cancelAnimationFrame(frame);
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setGuideCallout(null);
+    };
+    window.addEventListener('keydown', dismissOnEscape);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('keydown', dismissOnEscape);
+    };
   }, [guideCallout]);
 
   const reset = () => {
@@ -284,6 +291,7 @@ function App() {
 
       let frontier = [lessonRootId];
       const branchCount = lesson.demo.branches ?? 1;
+      const demoSeed = lesson.demo.seed;
       for (let depth = 0; depth < lesson.demo.steps; depth += 1) {
         const nextFrontier: string[] = [];
         for (const sourceId of frontier) {
@@ -291,7 +299,7 @@ function App() {
           const source = sourceTree[sourceId];
           if (!source) continue;
           const sourceText = (rootFor(sourceTree, sourceId).prompt ?? DEFAULT_PROMPT) + pathTo(sourceTree, sourceId).map((node) => node.token).join('');
-          const predictions = await predictNextToken(sourceText, lesson.demo.temperature ?? 0.8, randomSeed());
+          const predictions = await predictNextToken(sourceText, lesson.demo.temperature ?? 0.8, demoSeed);
           const sampled = predictions.find((candidate) => candidate.sampled) ?? predictions[0];
           const alternatives = predictions.filter((candidate) => candidate.token !== sampled.token);
           const choices = depth === 0 && branchCount > 1 ? [sampled, ...alternatives.slice(0, branchCount - 1)] : [sampled];
@@ -320,13 +328,15 @@ function App() {
       setActiveLeafId(destinationId);
       setSelectedNodeId(destinationId);
       if (lesson.demo.temperature !== undefined) setTemperature(lesson.demo.temperature);
-      if (lesson.id === 'random-seeds') setFixedSeed(false);
+      setFixedSeed(true);
+      setSeed(demoSeed);
       setGuideCallout({ target: lesson.demo.target, title: lesson.demo.title, body: lesson.demo.callout });
     } catch (caught) { setError(caught instanceof Error ? caught.message : String(caught)); }
     finally { setStatus('idle'); setActiveDemoId(null); }
   }
 
   return <main>
+    {guideCallout && <button aria-label="Dismiss lesson guide" className="guide-backdrop" onClick={() => setGuideCallout(null)} type="button" />}
     <header className="topbar">
       <a className="wordmark" href={import.meta.env.BASE_URL}><BrainCircuit size={22} /><span>Next Token Lab</span></a>
       <div className="privacy-note"><Database size={15} /> Runs and stays in your browser</div>
