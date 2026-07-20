@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ArrowRight, BrainCircuit, Check, Database, GitBranch, LoaderCircle, Pencil, RotateCcw, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowRight, BrainCircuit, Check, Database, Dices, GitBranch, LoaderCircle, Pencil, RotateCcw, Sparkles, Trash2, X } from 'lucide-react';
 import { clearModelCache, loadModel, predictNextToken } from './inference';
 import type { TokenCandidate } from './inference';
 import { MODELS } from './models';
@@ -17,8 +17,10 @@ type StoryTree = Record<string, StoryNode>;
 
 const ROOT_ID = 'root';
 const DEFAULT_PROMPT = 'Once upon a time, a small robot discovered';
+const MAX_SEED = 2_147_483_647;
 const visibleToken = (token: string) => token.replaceAll(' ', '·').replaceAll('\n', '↵');
 const newTree = (): StoryTree => ({ [ROOT_ID]: { id: ROOT_ID, parentId: null, token: '', options: [], children: [] } });
+const randomSeed = () => Math.floor(Math.random() * MAX_SEED);
 
 function pathTo(tree: StoryTree, nodeId: string) {
   const path: StoryNode[] = [];
@@ -63,6 +65,7 @@ function App() {
   const [activeLeafId, setActiveLeafId] = useState(ROOT_ID);
   const [selectedNodeId, setSelectedNodeId] = useState(ROOT_ID);
   const [temperature, setTemperature] = useState(0.8);
+  const [seed, setSeed] = useState(42);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'idle' | 'loading' | 'thinking'>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -114,7 +117,7 @@ function App() {
   async function sampleFrom(sourceId: string, nextTemperature: number) {
       const sourceTree = treeRef.current;
       const sourceText = prompt + pathTo(sourceTree, sourceId).map((node) => node.token).join('');
-      const next = await predictNextToken(sourceText, nextTemperature);
+      const next = await predictNextToken(sourceText, nextTemperature, seed);
       const sampled = next.find((item) => item.sampled) ?? next[0];
       const currentTree = treeRef.current;
       const source = currentTree[sourceId];
@@ -197,6 +200,11 @@ function App() {
         <div className="model-list">{MODELS.map((item) => <button className={`model-option ${modelId === item.id ? 'selected' : ''}`} disabled={status !== 'idle' || isEditingPrompt} key={item.id} onClick={() => { setModelId(item.id); reset(); }} type="button">
           <span className="model-name">{item.name}</span><span className="model-meta">{item.kind} · {item.size}</span><span className="model-description">{item.description}</span>
         </button>)}</div>
+        <div className="seed-control">
+          <label htmlFor="seed">Sampling seed</label>
+          <div><input disabled={status !== 'idle' || isEditingPrompt} id="seed" max={MAX_SEED} min="0" onChange={(event) => setSeed(Math.min(MAX_SEED, Math.max(0, Number(event.target.value))))} step="1" type="number" value={seed} /><button aria-label="Choose a random sampling seed" disabled={status !== 'idle' || isEditingPrompt} onClick={() => setSeed(randomSeed())} title="Choose a random seed" type="button"><Dices size={16} /></button></div>
+          <p>Same seed and settings, same pick.</p>
+        </div>
         <button className="load-button" disabled={status !== 'idle' || isEditingPrompt} onClick={handleLoad} type="button">
           {status === 'loading' ? <LoaderCircle className="spin" size={18} /> : <Database size={18} />}
           {isLoaded ? 'Model ready' : status === 'loading' ? `Downloading ${Math.round(progress * 100)}%` : `Load ${model.size}`}
