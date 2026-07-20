@@ -4,31 +4,39 @@ Next Token Lab should teach a small number of ideas that learners can test direc
 
 The sequence moves from the basic mechanism to its consequences. It is written for a middle-school learner first, with enough precise language to support deeper discussion.
 
-## 1. Language models work with tokens, not whole ideas
+## 1. A language model predicts what could come next
 
-**Thesis:** A model builds text from tokens: small pieces that may be a word, part of a word, punctuation, or even a space.
+**Thesis:** A model looks at the text so far and gives several possible next pieces a chance.
 
-The interface reveals one generated token at a time. Showing spaces as dots and line breaks as arrows makes otherwise invisible token boundaries easier to notice. A token is a piece of text, not necessarily a complete word or thought.
+The model does not retrieve a finished answer. It assigns probabilities to possible continuations, selects one piece, adds it to the text, and repeats. The bear scenario begins with several plausible emotions so learners can see this choice before learning more specialized vocabulary.
 
-**Try it:** Step through punctuation, contractions, or unusual words and inspect the token labels.
+**Try it:** Compare the chances for scared, excited, happy, and other possible continuations.
 
-## 2. Every next token has odds that depend on the text so far
+## 2. Models build text from tokens, not always whole words
 
-**Thesis:** The model does not decide the whole answer at once. After every token, it calculates a new set of odds for what could come next.
+**Thesis:** A token is one piece the model can predict. It may be a whole word, part of a word, punctuation, or a space joined to what follows.
 
-These are conditional odds: changing the prompt or any earlier token changes the context, so the next-token probabilities change too. The probability bars are a snapshot of one moment in an unfolding process.
+The interface reveals one generated token at a time. In the bear scenario, TinyStories builds the word “scared” from the separate tokens ` sc` and `ared`, making the difference between human words and model pieces concrete.
 
-**Try it:** Select an earlier token, choose another candidate, and compare the next set of odds.
+**Try it:** Inspect the two token buttons that form the single word scared.
 
-## 3. The model offers odds; the decoder makes the pick
+## 3. The text so far changes what could come next
 
-**Thesis:** A language model produces probabilities. A sampling rule turns those probabilities into one selected token.
+**Thesis:** After every selected token, the model calculates a new set of chances from the changed context.
 
-The highest-probability token is not automatically chosen unless the decoder is set to behave predictably. With sampling, a less likely token can still be selected. Keeping the model and the selection rule separate prevents the common misconception that a probability is already a decision.
+Scared, excited, and happy create three versions of the same story. The guided example generates one additional token after each emotion so selecting a branch reveals the probability list calculated immediately after that emotion.
+
+**Try it:** Select each emotion’s branch and compare the next-token probability bars.
+
+## 4. The model offers chances; a picking rule chooses one
+
+**Thesis:** A language model produces probabilities. A sampling rule, sometimes called a decoder, turns those probabilities into one selected token.
+
+The highest-probability token is not automatically chosen unless the picking rule is set to behave predictably. Keeping the model and the selection rule separate prevents the common misconception that a probability is already a decision.
 
 **Try it:** Keep the same prompt and step more than once from the same position.
 
-## 4. One answer hides a tree of possible answers
+## 5. One answer hides a tree of possible answers
 
 **Thesis:** A chat window shows one path, but generation is really a branching tree of possible continuations.
 
@@ -36,7 +44,7 @@ At each step, many tokens could be chosen. Once one is selected, most interfaces
 
 **Try it:** Click an alternative candidate and watch a new branch appear.
 
-## 5. A small early choice can reshape everything that follows
+## 6. A small early choice can reshape everything that follows
 
 **Thesis:** Choosing one different token changes the context, which can change every later probability.
 
@@ -44,7 +52,7 @@ The model recalculates after each token. Two branches that differ by one small p
 
 **Try it:** Branch near the beginning, then grow both paths several tokens.
 
-## 6. Temperature reshapes the odds; it does not add knowledge
+## 7. Temperature reshapes the odds; it does not add knowledge
 
 **Thesis:** Temperature changes how strongly the decoder favors the model's top choices.
 
@@ -52,7 +60,7 @@ Low temperature concentrates the odds around likely tokens. Higher temperature s
 
 **Try it:** Move Randomness from predictable to chaotic and watch the same probability landscape change.
 
-## 7. Random does not mean uncaused
+## 8. Random choices can still be repeated
 
 **Thesis:** Sampling can produce different results from the same odds, while a fixed seed can make the same experiment repeatable.
 
@@ -60,7 +68,7 @@ A random seed supplies the repeatable starting point for the sampler's sequence 
 
 **Try it:** Repeat a branch with fresh random seeds, then enable Fixed seed and repeat it again.
 
-## 8. Likely is not the same as true
+## 9. Likely is not the same as true
 
 **Thesis:** A high probability means "this fits patterns the model learned," not "this is correct."
 
@@ -68,7 +76,7 @@ The model is predicting text, not checking a fact against reality. Fluent, famil
 
 **Try it:** Give the model a confident but false premise and inspect which continuations it favors.
 
-## 9. Models can disagree while using the same basic process
+## 10. Models can disagree while using the same basic process
 
 **Thesis:** Different models can assign different odds to the same prompt, even though they all generate one token at a time.
 

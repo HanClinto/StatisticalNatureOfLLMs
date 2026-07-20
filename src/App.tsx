@@ -292,14 +292,55 @@ function App() {
       let frontier = [lessonRootId];
       const branchCount = lesson.demo.branches ?? 1;
       const demoSeed = lesson.demo.seed;
-      for (let depth = 0; depth < lesson.demo.steps; depth += 1) {
+      const demoTemperature = lesson.demo.temperature ?? 0.8;
+      const addPrediction = async (sourceId: string, requestedToken?: string) => {
+        const sourceTree = treeRef.current;
+        const source = sourceTree[sourceId];
+        if (!source) throw new Error('That lesson position is no longer available.');
+        const sourceText = (rootFor(sourceTree, sourceId).prompt ?? DEFAULT_PROMPT) + pathTo(sourceTree, sourceId).map((node) => node.token).join('');
+        const predictions = await predictNextToken(sourceText, demoTemperature, demoSeed);
+        const choice = requestedToken === undefined
+          ? predictions.find((candidate) => candidate.sampled) ?? predictions[0]
+          : predictions.find((candidate) => candidate.token === requestedToken);
+        if (!choice) throw new Error(`The lesson expected token “${visibleToken(requestedToken ?? '')}”, but this model did not offer it.`);
+        const existingId = source.children.find((id) => sourceTree[id]?.token === choice.token);
+        const childId = existingId ?? `node-${nextNodeId.current++}`;
+        const child = existingId ? sourceTree[existingId] : { id: childId, parentId: sourceId, token: choice.token, options: [], children: [] };
+        treeRef.current = {
+          ...treeRef.current,
+          [sourceId]: { ...source, options: predictions, optionsModelId: tinyModel.id, children: existingId ? source.children : [...source.children, childId] },
+          [childId]: child,
+        };
+        setTree(treeRef.current);
+        return childId;
+      };
+
+      const lessonPaths: string[][] = [];
+      if (lesson.demo.paths) {
+        for (const path of lesson.demo.paths) {
+          let sourceId = lessonRootId;
+          const nodeIds: string[] = [];
+          for (const token of path.tokens) {
+            sourceId = await addPrediction(sourceId, token);
+            nodeIds.push(sourceId);
+          }
+          for (let step = 0; step < path.steps; step += 1) {
+            sourceId = await addPrediction(sourceId);
+            nodeIds.push(sourceId);
+          }
+          lessonPaths.push(nodeIds);
+        }
+        frontier = lessonPaths.map((path) => path.at(-1) ?? lessonRootId);
+      }
+
+      for (let depth = 0; !lesson.demo.paths && depth < lesson.demo.steps; depth += 1) {
         const nextFrontier: string[] = [];
         for (const sourceId of frontier) {
           const sourceTree = treeRef.current;
           const source = sourceTree[sourceId];
           if (!source) continue;
           const sourceText = (rootFor(sourceTree, sourceId).prompt ?? DEFAULT_PROMPT) + pathTo(sourceTree, sourceId).map((node) => node.token).join('');
-          const predictions = await predictNextToken(sourceText, lesson.demo.temperature ?? 0.8, demoSeed);
+          const predictions = await predictNextToken(sourceText, demoTemperature, demoSeed);
           const sampled = predictions.find((candidate) => candidate.sampled) ?? predictions[0];
           const alternatives = predictions.filter((candidate) => candidate.token !== sampled.token);
           const choices = depth === 0 && branchCount > 1 ? [sampled, ...alternatives.slice(0, branchCount - 1)] : [sampled];
@@ -320,14 +361,17 @@ function App() {
         frontier = nextFrontier;
       }
 
-      const destinationId = frontier[0] ?? lessonRootId;
+      const focusPath = lessonPaths[lesson.demo.focusBranch ?? 0];
+      const focusIndex = lesson.demo.focusToken ?? (focusPath?.length ?? 1) - 1;
+      const destinationId = focusPath?.[focusIndex] ?? frontier[0] ?? lessonRootId;
+      const activeLeaf = focusPath?.at(-1) ?? destinationId;
       treeRef.current = { ...treeRef.current };
       selectedNodeRef.current = destinationId;
       setTree(treeRef.current);
       setActiveRootId(lessonRootId);
-      setActiveLeafId(destinationId);
+      setActiveLeafId(activeLeaf);
       setSelectedNodeId(destinationId);
-      if (lesson.demo.temperature !== undefined) setTemperature(lesson.demo.temperature);
+      setTemperature(demoTemperature);
       setFixedSeed(true);
       setSeed(demoSeed);
       setGuideCallout({ target: lesson.demo.target, title: lesson.demo.title, body: lesson.demo.callout });
@@ -421,7 +465,7 @@ function App() {
     <section className="explanations" id="explanations">
       <div className="explanations-heading">
         <p className="eyebrow">Explanations</p>
-        <h2>Nine ideas you can test here.</h2>
+        <h2>{LESSONS.length} ideas you can test here.</h2>
         <p>Open an idea, then use the lab above to see it happen. These are not just facts to memorize; each one points to an experiment.</p>
       </div>
       <div className="lesson-list">
