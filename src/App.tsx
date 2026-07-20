@@ -17,6 +17,7 @@ type StoryTree = Record<string, StoryNode>;
 
 const ROOT_ID = 'root';
 const DEFAULT_PROMPT = 'Once upon a time, a small robot discovered';
+const MAX_TEMPERATURE = 3;
 const MAX_SEED = 2_147_483_647;
 const visibleToken = (token: string) => token.replaceAll(' ', '·').replaceAll('\n', '↵');
 const newTree = (): StoryTree => ({ [ROOT_ID]: { id: ROOT_ID, parentId: null, token: '', options: [], children: [] } });
@@ -225,8 +226,8 @@ function App() {
           <div className="step-row"><button className="step-button" disabled={status !== 'idle' || isEditingPrompt} onClick={handleStep} type="button">{status === 'thinking' ? <LoaderCircle className="spin" size={19} /> : <ArrowRight size={19} />}{isLoaded ? selectedNodeId === activeLeafId ? 'Step one token' : 'Branch from here' : 'Load model'}</button><span>Click a generated token to inspect the odds that produced it. Later tokens turn gray but stay available.</span></div>
           <div className="randomness-control">
             <label className="temperature-label" htmlFor="temperature">Randomness <strong>{temperature.toFixed(1)}</strong></label>
-            <input disabled={isEditingPrompt} id="temperature" max="1.5" min="0" onChange={(event) => void handleTemperatureChange(Number(event.target.value))} step="0.1" type="range" value={temperature} />
-            <div className="range-labels"><span>predictable</span><span>varied</span></div>
+            <input disabled={isEditingPrompt} id="temperature" max={MAX_TEMPERATURE} min="0" onChange={(event) => void handleTemperatureChange(Number(event.target.value))} step="0.1" type="range" value={temperature} />
+            <div className="range-labels"><span>predictable</span><span>varied</span><span>chaotic</span></div>
           </div>
         </div>
         {error && <div className="error-message" role="alert">{error}</div>}
