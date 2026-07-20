@@ -4,6 +4,14 @@ An in-browser next-token laboratory for seeing how language models weigh possibl
 
 Try it at [hanclinto.github.io/StatisticalNatureOfLLMs](https://hanclinto.github.io/StatisticalNatureOfLLMs/).
 
+## What You Can Explore
+
+- Step through local generation one token at a time and inspect next-token probabilities.
+- Choose alternatives, backtrack, and preserve multiple continuations in a story tree.
+- Keep multiple starting prompts as separate roots without discarding earlier work.
+- Adjust temperature and seeds to compare predictable, varied, and repeatable sampling.
+- Use each lesson's **Show me** action to add a TinyStories example and open a dismissible callout over the relevant part of the lab.
+
 ## Models
 
 | Model | Role | Download | Why it is included |
@@ -29,6 +37,6 @@ The Vite base path is `/StatisticalNatureOfLLMs/` for project Pages. The workflo
 
 ## Current Limitations
 
-- The first lesson uses raw completion for all three models. Chat-template and tool-call lessons are the next layer.
+- The current lesson set uses raw completion for all three models. Chat-template and tool-call lessons are a future layer.
 - Branches are reconstructed from displayed token text. Exact forced-token replay will require retaining token IDs across the wllama response boundary.
 - Browser storage quotas and WebAssembly memory limits vary by device. The 19 MB model is the safest fallback.
