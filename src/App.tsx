@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ArrowRight, BrainCircuit, Database, GitBranch, LoaderCircle, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
+import { ArrowRight, BrainCircuit, Check, Database, GitBranch, LoaderCircle, Pencil, RotateCcw, Sparkles, Trash2, X } from 'lucide-react';
 import { clearModelCache, loadModel, predictNextToken } from './inference';
 import type { TokenCandidate } from './inference';
 import { MODELS } from './models';
@@ -57,6 +57,8 @@ function App() {
   const [modelId, setModelId] = useState(MODELS[0].id);
   const [loadedModelId, setLoadedModelId] = useState<string | null>(null);
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
+  const [promptDraft, setPromptDraft] = useState(DEFAULT_PROMPT);
+  const [isEditingPrompt, setIsEditingPrompt] = useState(false);
   const [tree, setTree] = useState<StoryTree>(newTree);
   const [activeLeafId, setActiveLeafId] = useState(ROOT_ID);
   const [selectedNodeId, setSelectedNodeId] = useState(ROOT_ID);
@@ -85,8 +87,24 @@ function App() {
     pendingTemperature.current = null;
     treeRef.current = emptyTree;
     selectedNodeRef.current = ROOT_ID;
+    setIsEditingPrompt(false);
     setTree(emptyTree); setActiveLeafId(ROOT_ID); setSelectedNodeId(ROOT_ID); setError(null);
   };
+  function beginPromptEdit() {
+    if (status !== 'idle') return;
+    setPromptDraft(prompt);
+    setIsEditingPrompt(true);
+  }
+  function savePrompt() {
+    if (status !== 'idle') return;
+    const nextPrompt = promptDraft.trimEnd();
+    if (!nextPrompt) return;
+    if (nextPrompt !== prompt) {
+      setPrompt(nextPrompt);
+      reset();
+    }
+    setIsEditingPrompt(false);
+  }
   async function handleLoad() {
     setStatus('loading'); setError(null); setProgress(0);
     try { await loadModel(model, setProgress); setLoadedModelId(modelId); }
@@ -176,26 +194,30 @@ function App() {
     <section className="workspace" aria-label="Next token explorer">
       <aside className="controls">
         <div className="section-heading"><span>01</span><h2>Choose a model</h2></div>
-        <div className="model-list">{MODELS.map((item) => <button className={`model-option ${modelId === item.id ? 'selected' : ''}`} key={item.id} onClick={() => { setModelId(item.id); reset(); }} type="button">
+        <div className="model-list">{MODELS.map((item) => <button className={`model-option ${modelId === item.id ? 'selected' : ''}`} disabled={status !== 'idle' || isEditingPrompt} key={item.id} onClick={() => { setModelId(item.id); reset(); }} type="button">
           <span className="model-name">{item.name}</span><span className="model-meta">{item.kind} · {item.size}</span><span className="model-description">{item.description}</span>
         </button>)}</div>
-        <button className="load-button" disabled={status !== 'idle'} onClick={handleLoad} type="button">
+        <button className="load-button" disabled={status !== 'idle' || isEditingPrompt} onClick={handleLoad} type="button">
           {status === 'loading' ? <LoaderCircle className="spin" size={18} /> : <Database size={18} />}
           {isLoaded ? 'Model ready' : status === 'loading' ? `Downloading ${Math.round(progress * 100)}%` : `Load ${model.size}`}
         </button>
         <p className="cache-copy">The first load comes from Hugging Face. Later visits reuse the browser cache.</p>
-        <button className="text-button" onClick={clearCache} type="button"><Trash2 size={15} /> Clear model cache</button>
+        <button className="text-button" disabled={status !== 'idle' || isEditingPrompt} onClick={clearCache} type="button"><Trash2 size={15} /> Clear model cache</button>
       </aside>
       <div className="analysis-board">
         <div className="board-toolbar"><div><span className={`status-dot ${isLoaded ? 'ready' : ''}`} />{isLoaded ? model.name : 'No model loaded'}</div><button aria-label="Reset generation" onClick={reset} title="Reset generation" type="button"><RotateCcw size={17} /></button></div>
-        <label className="prompt-label" htmlFor="prompt">Start the text</label>
-        <textarea id="prompt" onChange={(event) => { setPrompt(event.target.value); reset(); }} rows={3} value={prompt} />
-        <div className="generated-text" aria-live="polite"><span>{prompt}</span>{activePath.map((node, index) => <button className={`story-token ${node.id === selectedNodeId ? 'selected' : ''} ${selectedIndex >= 0 && index > selectedIndex ? 'future' : ''}`} key={node.id} onClick={() => setSelectedNodeId(node.id)} title={`Inspect ${visibleToken(node.token)}`} type="button">{node.token}</button>)}{activePath.length === 0 && <em>The model’s tokens will appear here.</em>}</div>
+        <div className={`generated-text ${isEditingPrompt ? 'editing' : ''}`} aria-live="polite">
+          {isEditingPrompt ? <div className="prompt-editor">
+            <label htmlFor="prompt">Starting prompt</label>
+            <textarea autoFocus id="prompt" onChange={(event) => setPromptDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') setIsEditingPrompt(false); if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) savePrompt(); }} rows={3} value={promptDraft} />
+            <div className="prompt-editor-actions"><span>{activePath.length > 0 ? 'Saving a change starts a new story tree.' : 'Press ⌘ Enter to save.'}</span><button aria-label="Cancel prompt edit" onClick={() => setIsEditingPrompt(false)} title="Cancel" type="button"><X size={16} /></button><button aria-label="Save starting prompt" disabled={!promptDraft.trim()} onClick={savePrompt} title="Save prompt" type="button"><Check size={16} /></button></div>
+          </div> : <><button className="prompt-text" onClick={beginPromptEdit} title="Edit starting prompt" type="button"><span>{prompt}</span><Pencil size={14} /></button>{activePath.map((node, index) => <button className={`story-token ${node.id === selectedNodeId ? 'selected' : ''} ${selectedIndex >= 0 && index > selectedIndex ? 'future' : ''}`} key={node.id} onClick={() => setSelectedNodeId(node.id)} title={`Inspect ${visibleToken(node.token)}`} type="button">{node.token}</button>)}{activePath.length === 0 && <em>Click the opening text to edit it, or load a model and step forward.</em>}</>}
+        </div>
         <div className="generation-controls">
-          <div className="step-row"><button className="step-button" disabled={status !== 'idle'} onClick={handleStep} type="button">{status === 'thinking' ? <LoaderCircle className="spin" size={19} /> : <ArrowRight size={19} />}{isLoaded ? selectedNodeId === activeLeafId ? 'Step one token' : 'Branch from here' : 'Load model'}</button><span>Click a generated token to inspect the odds that produced it. Later tokens turn gray but stay available.</span></div>
+          <div className="step-row"><button className="step-button" disabled={status !== 'idle' || isEditingPrompt} onClick={handleStep} type="button">{status === 'thinking' ? <LoaderCircle className="spin" size={19} /> : <ArrowRight size={19} />}{isLoaded ? selectedNodeId === activeLeafId ? 'Step one token' : 'Branch from here' : 'Load model'}</button><span>Click a generated token to inspect the odds that produced it. Later tokens turn gray but stay available.</span></div>
           <div className="randomness-control">
             <label className="temperature-label" htmlFor="temperature">Randomness <strong>{temperature.toFixed(1)}</strong></label>
-            <input id="temperature" max="1.5" min="0" onChange={(event) => void handleTemperatureChange(Number(event.target.value))} step="0.1" type="range" value={temperature} />
+            <input disabled={isEditingPrompt} id="temperature" max="1.5" min="0" onChange={(event) => void handleTemperatureChange(Number(event.target.value))} step="0.1" type="range" value={temperature} />
             <div className="range-labels"><span>predictable</span><span>varied</span></div>
           </div>
         </div>
