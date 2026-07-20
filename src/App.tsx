@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ArrowRight, BrainCircuit, Check, Database, Dices, GitBranch, LoaderCircle, Pencil, RotateCcw, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowRight, BrainCircuit, Check, Database, GitBranch, LoaderCircle, Pencil, RotateCcw, Sparkles, Trash2, X } from 'lucide-react';
 import { clearModelCache, loadModel, predictNextToken } from './inference';
 import type { TokenCandidate } from './inference';
 import { MODELS } from './models';
@@ -66,6 +66,7 @@ function App() {
   const [activeLeafId, setActiveLeafId] = useState(ROOT_ID);
   const [selectedNodeId, setSelectedNodeId] = useState(ROOT_ID);
   const [temperature, setTemperature] = useState(0.8);
+  const [fixedSeed, setFixedSeed] = useState(false);
   const [seed, setSeed] = useState(42);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'idle' | 'loading' | 'thinking'>('idle');
@@ -118,7 +119,7 @@ function App() {
   async function sampleFrom(sourceId: string, nextTemperature: number) {
       const sourceTree = treeRef.current;
       const sourceText = prompt + pathTo(sourceTree, sourceId).map((node) => node.token).join('');
-      const next = await predictNextToken(sourceText, nextTemperature, seed);
+      const next = await predictNextToken(sourceText, nextTemperature, fixedSeed ? seed : randomSeed());
       const sampled = next.find((item) => item.sampled) ?? next[0];
       const currentTree = treeRef.current;
       const source = currentTree[sourceId];
@@ -130,7 +131,7 @@ function App() {
       treeRef.current = updatedTree;
       selectedNodeRef.current = destinationId;
       setTree(updatedTree);
-      setActiveLeafId(deepestDescendant(updatedTree, destinationId));
+      setActiveLeafId(destinationId);
       setSelectedNodeId(destinationId);
   }
   async function handleStep() {
@@ -202,9 +203,9 @@ function App() {
           <span className="model-name">{item.name}</span><span className="model-meta">{item.kind} · {item.size}</span><span className="model-description">{item.description}</span>
         </button>)}</div>
         <div className="seed-control">
-          <label htmlFor="seed">Sampling seed</label>
-          <div><input disabled={status !== 'idle' || isEditingPrompt} id="seed" max={MAX_SEED} min="0" onChange={(event) => setSeed(Math.min(MAX_SEED, Math.max(0, Number(event.target.value))))} step="1" type="number" value={seed} /><button aria-label="Choose a random sampling seed" disabled={status !== 'idle' || isEditingPrompt} onClick={() => setSeed(randomSeed())} title="Choose a random seed" type="button"><Dices size={16} /></button></div>
-          <p>Same seed and settings, same pick.</p>
+          <label className="seed-toggle"><input checked={fixedSeed} disabled={status !== 'idle' || isEditingPrompt} onChange={(event) => setFixedSeed(event.target.checked)} type="checkbox" /> Fixed seed</label>
+          <input aria-label="Fixed sampling seed" disabled={!fixedSeed || status !== 'idle' || isEditingPrompt} id="seed" max={MAX_SEED} min="0" onChange={(event) => setSeed(Math.min(MAX_SEED, Math.max(0, Number(event.target.value))))} step="1" type="number" value={seed} />
+          <p>{fixedSeed ? 'Same seed and settings, same pick.' : 'A fresh random seed for every pick.'}</p>
         </div>
         <button className="load-button" disabled={status !== 'idle' || isEditingPrompt} onClick={handleLoad} type="button">
           {status === 'loading' ? <LoaderCircle className="spin" size={18} /> : <Database size={18} />}
@@ -223,12 +224,11 @@ function App() {
           </div> : <><button className="prompt-text" onClick={beginPromptEdit} title="Edit starting prompt" type="button"><span>{prompt}</span><Pencil size={14} /></button>{activePath.map((node, index) => <button className={`story-token ${node.id === selectedNodeId ? 'selected' : ''} ${selectedIndex >= 0 && index > selectedIndex ? 'future' : ''}`} key={node.id} onClick={() => setSelectedNodeId(node.id)} title={`Inspect ${visibleToken(node.token)}`} type="button">{node.token}</button>)}{activePath.length === 0 && <em>Click the opening text to edit it, or load a model and step forward.</em>}</>}
         </div>
         <div className="generation-controls">
-          <div className="step-row"><button className="step-button" disabled={status !== 'idle' || isEditingPrompt} onClick={handleStep} type="button">{status === 'thinking' ? <LoaderCircle className="spin" size={19} /> : <ArrowRight size={19} />}{isLoaded ? selectedNodeId === activeLeafId ? 'Step one token' : 'Branch from here' : 'Load model'}</button><span>Click a generated token to inspect the odds that produced it. Later tokens turn gray but stay available.</span></div>
-          <div className="randomness-control">
-            <label className="temperature-label" htmlFor="temperature">Randomness <strong>{temperature.toFixed(1)}</strong></label>
-            <input disabled={isEditingPrompt} id="temperature" max={MAX_TEMPERATURE} min="0" onChange={(event) => void handleTemperatureChange(Number(event.target.value))} step="0.1" type="range" value={temperature} />
-            <div className="range-labels"><span>predictable</span><span>varied</span><span>chaotic</span></div>
-          </div>
+          <div className="step-stack"><button className="step-button" disabled={status !== 'idle' || isEditingPrompt} onClick={handleStep} type="button">{status === 'thinking' ? <LoaderCircle className="spin" size={19} /> : <ArrowRight size={19} />}{isLoaded ? selectedNodeId === activeLeafId ? 'Step one token' : 'Branch from here' : 'Load model'}</button><div className="randomness-control">
+              <label className="temperature-label" htmlFor="temperature">Randomness <strong>{temperature.toFixed(1)}</strong></label>
+              <input disabled={isEditingPrompt} id="temperature" max={MAX_TEMPERATURE} min="0" onChange={(event) => void handleTemperatureChange(Number(event.target.value))} step="0.1" type="range" value={temperature} />
+              <div className="range-labels"><span>predictable</span><span>varied</span><span>chaotic</span></div>
+            </div></div><span>Click a generated token to inspect the odds that produced it. Later tokens turn gray but stay available.</span>
         </div>
         {error && <div className="error-message" role="alert">{error}</div>}
         <section className="probability-panel">
@@ -245,13 +245,14 @@ function App() {
           const node = tree[nodeId];
           const run = [node];
           let runEnd = node;
-          while (!activePathIds.has(runEnd.id) && runEnd.children.length === 1 && !activePathIds.has(runEnd.children[0])) {
+          while (runEnd.children.length === 1) {
             runEnd = tree[runEnd.children[0]];
             run.push(runEnd);
           }
           const compactText = run.map((item) => item.token).join('').trim();
           const orderedChildren = [...runEnd.children].sort((left, right) => Number(activePathIds.has(right)) - Number(activePathIds.has(left)));
-          return <div className="tree-node" key={node.id}><button className={`${runEnd.id === selectedNodeId ? 'selected' : ''} ${activePathIds.has(node.id) ? 'active-path' : ''} ${run.length > 1 ? 'compact-run' : ''}`} onClick={() => visitNode(runEnd.id)} title={compactText || visibleToken(node.token)} type="button"><span>{run.length > 1 ? `${run.length} tokens` : visibleToken(node.token) || '∅'}</span><p>{run.length > 1 ? compactText : contextLabel(tree, node.id, prompt)}</p></button>{orderedChildren.length > 0 && <div className={`tree-children ${orderedChildren.length === 1 ? 'continuation' : 'variations'}`}>{orderedChildren.map(renderNode)}</div>}</div>;
+          const runIds = new Set(run.map((item) => item.id));
+          return <div className="tree-node" key={node.id}><button className={`${runIds.has(selectedNodeId) ? 'selected' : ''} ${run.some((item) => activePathIds.has(item.id)) ? 'active-path' : ''} compact-run`} onClick={() => visitNode(runEnd.id)} title={compactText || visibleToken(node.token)} type="button"><span>{run.length} {run.length === 1 ? 'token' : 'tokens'}</span><p>{compactText || '∅'}</p></button>{orderedChildren.length > 0 && <div className={`tree-children ${orderedChildren.length === 1 ? 'continuation' : 'variations'}`}>{orderedChildren.map(renderNode)}</div>}</div>;
         })}</div>}
       </aside>
     </section>
