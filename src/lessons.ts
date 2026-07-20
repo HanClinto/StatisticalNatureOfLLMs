@@ -14,6 +14,7 @@ export interface LessonDemoPath {
 }
 
 export interface LessonDemo {
+  modelId?: string;
   prompt: string;
   target: LessonTarget;
   title: string;
@@ -95,8 +96,8 @@ export const LESSONS: Lesson[] = [
     id: 'likely-not-true',
     thesis: 'Likely is not the same as true.',
     explanation: 'A high probability means that text fits patterns the model learned. It does not mean the text is correct, wise, or checked against reality.',
-    experiment: 'Give the model a confident but false premise and inspect which continuations it favors.',
-    demo: { prompt: 'Everyone knows the moon is made of cheese, so the astronaut', target: 'probabilities', title: 'Fluent odds are not a fact check', callout: 'These probabilities measure how text fits the premise. The model can confidently continue a false setup because likelihood is not truth.', steps: 1, seed: 42 },
+    experiment: 'Compare the model’s chance for Chicago with the much smaller chance it gives the correct answer, Springfield.',
+    demo: { modelId: 'smollm2-135m-instruct', prompt: 'Fact: The capital of Illinois is', target: 'probabilities', title: 'Most likely is not most truthful', callout: 'SmolLM2 gives Chicago 25.6% here, while the correct answer, Springfield, gets only 1.4%. These bars measure predicted text, not checked facts.', steps: 0, paths: [{ tokens: [' Chicago'], steps: 0 }], focusBranch: 0, focusToken: 0, seed: 42, temperature: 0.8 },
   },
   {
     id: 'models-disagree',

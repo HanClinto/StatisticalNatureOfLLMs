@@ -74,7 +74,9 @@ A random seed supplies the repeatable starting point for the sampler's sequence 
 
 The model is predicting text, not checking a fact against reality. Fluent, familiar, and widely repeated claims may receive high probability whether or not they are accurate. Probability describes the model's expectation inside this context.
 
-**Try it:** Give the model a confident but false premise and inspect which continuations it favors.
+The guided example uses SmolLM2 135M with the prompt “Fact: The capital of Illinois is”. It strongly favors Chicago even though Springfield is the correct answer, making the difference between statistical likelihood and factual accuracy directly visible.
+
+**Try it:** Compare the model’s chance for Chicago with the much smaller chance it gives Springfield.
 
 ## 10. Models can disagree while using the same basic process
 

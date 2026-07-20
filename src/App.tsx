@@ -137,7 +137,8 @@ function App() {
   useEffect(() => {
     if (!guideCallout) return;
     const frame = window.requestAnimationFrame(() => {
-      document.querySelector(`[data-guide-target="${guideCallout.target}"] .guide-callout`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const mobileProbabilityGuide = guideCallout.target === 'probabilities' && window.matchMedia('(max-width: 700px)').matches;
+      document.querySelector(`[data-guide-target="${guideCallout.target}"] .guide-callout`)?.scrollIntoView({ behavior: 'smooth', block: mobileProbabilityGuide ? 'start' : 'center' });
     });
     const dismissOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setGuideCallout(null);
@@ -275,10 +276,10 @@ function App() {
     if (status !== 'idle') return;
     setActiveDemoId(lesson.id); setStatus('loading'); setError(null); setGuideCallout(null); setIsEditingPrompt(false);
     try {
-      const tinyModel = MODELS[0];
-      setModelId(tinyModel.id);
-      await loadModel(tinyModel, setProgress);
-      setLoadedModelId(tinyModel.id);
+      const demoModel = MODELS.find((item) => item.id === lesson.demo.modelId) ?? MODELS[0];
+      setModelId(demoModel.id);
+      await loadModel(demoModel, setProgress);
+      setLoadedModelId(demoModel.id);
 
       let lessonRootId = rootIdsRef.current.find((id) => treeRef.current[id]?.prompt === lesson.demo.prompt);
       if (!lessonRootId) {
@@ -308,7 +309,7 @@ function App() {
         const child = existingId ? sourceTree[existingId] : { id: childId, parentId: sourceId, token: choice.token, options: [], children: [] };
         treeRef.current = {
           ...treeRef.current,
-          [sourceId]: { ...source, options: predictions, optionsModelId: tinyModel.id, children: existingId ? source.children : [...source.children, childId] },
+          [sourceId]: { ...source, options: predictions, optionsModelId: demoModel.id, children: existingId ? source.children : [...source.children, childId] },
           [childId]: child,
         };
         setTree(treeRef.current);
@@ -355,7 +356,7 @@ function App() {
             }
             nextFrontier.push(childId);
           }
-          treeRef.current = { ...treeRef.current, ...additions, [sourceId]: { ...source, options: predictions, optionsModelId: tinyModel.id, children: childIds } };
+          treeRef.current = { ...treeRef.current, ...additions, [sourceId]: { ...source, options: predictions, optionsModelId: demoModel.id, children: childIds } };
           setTree(treeRef.current);
         }
         frontier = nextFrontier;
@@ -469,13 +470,15 @@ function App() {
         <p>Open an idea, then use the lab above to see it happen. These are not just facts to memorize; each one points to an experiment.</p>
       </div>
       <div className="lesson-list">
-        {LESSONS.map((lesson, index) => <details id={`lesson-${lesson.id}`} key={lesson.id} onToggle={(event) => {
+        {LESSONS.map((lesson, index) => {
+          const demoModel = MODELS.find((item) => item.id === lesson.demo.modelId);
+          return <details id={`lesson-${lesson.id}`} key={lesson.id} onToggle={(event) => {
           if (event.currentTarget.open) setExpandedLessonId(lesson.id);
           else if (expandedLessonId === lesson.id) setExpandedLessonId(null);
         }} open={expandedLessonId === lesson.id}>
           <summary><span>{String(index + 1).padStart(2, '0')}</span><strong>{lesson.thesis}</strong></summary>
-          <div className="lesson-explanation"><p>{lesson.explanation}</p><p><b>Try it:</b> {lesson.experiment}</p><button className="show-me-button" disabled={status !== 'idle'} onClick={() => void showLesson(lesson)} type="button">{activeDemoId === lesson.id ? <LoaderCircle className="spin" size={16} /> : <Eye size={16} />}{activeDemoId === lesson.id ? 'Building example...' : 'Show me'}</button></div>
-        </details>)}
+          <div className="lesson-explanation"><p>{lesson.explanation}</p><p><b>Try it:</b> {lesson.experiment}</p><button className="show-me-button" disabled={status !== 'idle'} onClick={() => void showLesson(lesson)} type="button">{activeDemoId === lesson.id ? <LoaderCircle className="spin" size={16} /> : <Eye size={16} />}{activeDemoId === lesson.id ? 'Building example...' : demoModel ? `Show me · ${demoModel.name} ${demoModel.size}` : 'Show me'}</button></div>
+        </details>})}
       </div>
     </section>
     <section className="plain-language"><p className="eyebrow">Keep this distinction in view</p><div><h2>The model offers odds.</h2><h2>The decoder makes the pick.</h2></div><p>A high number means “this token fits patterns I learned.” It does not mean the token is true, wise, or even useful.</p></section>
