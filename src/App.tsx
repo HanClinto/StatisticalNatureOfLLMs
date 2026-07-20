@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, BrainCircuit, Check, Database, GitBranch, LoaderCircle, Pencil, RotateCcw, Sparkles, Trash2, X } from 'lucide-react';
 import { clearModelCache, loadModel, predictNextToken } from './inference';
 import type { TokenCandidate } from './inference';
+import { LESSONS } from './lessons';
 import { MODELS } from './models';
 import './App.css';
 
@@ -71,6 +72,10 @@ function App() {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'idle' | 'loading' | 'thinking'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [lessonIndex, setLessonIndex] = useState(0);
+  const [lessonPaused, setLessonPaused] = useState(false);
+  const [lessonFading, setLessonFading] = useState(false);
+  const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null);
   const nextNodeId = useRef(1);
   const treeRef = useRef(tree);
   const selectedNodeRef = useRef(selectedNodeId);
@@ -86,6 +91,21 @@ function App() {
   const optionSourceId = selectedNodeId === ROOT_ID ? ROOT_ID : tree[selectedNodeId]?.parentId ?? ROOT_ID;
   const candidates = applyTemperature(tree[optionSourceId]?.options ?? [], temperature);
   const selectedToken = selectedNodeId === ROOT_ID ? null : tree[selectedNodeId]?.token;
+  const currentLesson = LESSONS[lessonIndex];
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (lessonPaused || prefersReducedMotion) return;
+    const fadeTimer = window.setTimeout(() => setLessonFading(true), 5500);
+    const changeTimer = window.setTimeout(() => {
+      setLessonIndex((current) => (current + 1) % LESSONS.length);
+      setLessonFading(false);
+    }, 6000);
+    return () => {
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(changeTimer);
+    };
+  }, [lessonIndex, lessonPaused]);
 
   const reset = () => {
     const emptyTree = newTree();
@@ -194,7 +214,10 @@ function App() {
     <section className="intro">
       <p className="eyebrow">The statistical nature of language models</p>
       <h1>Watch a model choose what comes next.</h1>
-      <p className="lede">A language model does not pull one answer from a vault. At every step it weighs many possible tokens, then a sampling rule picks one.</p>
+      <a className={`lede lesson-link ${lessonFading ? 'fading' : ''}`} href={`#lesson-${currentLesson.id}`} onBlur={() => setLessonPaused(false)} onClick={() => setExpandedLessonId(currentLesson.id)} onFocus={() => setLessonPaused(true)} onMouseEnter={() => setLessonPaused(true)} onMouseLeave={() => setLessonPaused(false)}>
+        <span>{currentLesson.thesis}</span>
+        <small>Explore this idea</small>
+      </a>
     </section>
     <section className="workspace" aria-label="Next token explorer">
       <aside className="controls">
@@ -255,6 +278,22 @@ function App() {
           return <div className="tree-node" key={node.id}><button className={`${runIds.has(selectedNodeId) ? 'selected' : ''} ${run.some((item) => activePathIds.has(item.id)) ? 'active-path' : ''} compact-run`} onClick={() => visitNode(runEnd.id)} title={compactText || visibleToken(node.token)} type="button"><span>{run.length} {run.length === 1 ? 'token' : 'tokens'}</span><p>{compactText || '∅'}</p></button>{orderedChildren.length > 0 && <div className={`tree-children ${orderedChildren.length === 1 ? 'continuation' : 'variations'}`}>{orderedChildren.map(renderNode)}</div>}</div>;
         })}</div>}
       </aside>
+    </section>
+    <section className="explanations" id="explanations">
+      <div className="explanations-heading">
+        <p className="eyebrow">Explanations</p>
+        <h2>Nine ideas you can test here.</h2>
+        <p>Open an idea, then use the lab above to see it happen. These are not just facts to memorize; each one points to an experiment.</p>
+      </div>
+      <div className="lesson-list">
+        {LESSONS.map((lesson, index) => <details id={`lesson-${lesson.id}`} key={lesson.id} onToggle={(event) => {
+          if (event.currentTarget.open) setExpandedLessonId(lesson.id);
+          else if (expandedLessonId === lesson.id) setExpandedLessonId(null);
+        }} open={expandedLessonId === lesson.id}>
+          <summary><span>{String(index + 1).padStart(2, '0')}</span><strong>{lesson.thesis}</strong></summary>
+          <div className="lesson-explanation"><p>{lesson.explanation}</p><p><b>Try it:</b> {lesson.experiment}</p></div>
+        </details>)}
+      </div>
     </section>
     <section className="plain-language"><p className="eyebrow">Keep this distinction in view</p><div><h2>The model offers odds.</h2><h2>The decoder makes the pick.</h2></div><p>A high number means “this token fits patterns I learned.” It does not mean the token is true, wise, or even useful.</p></section>
   </main>;
