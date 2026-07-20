@@ -209,8 +209,8 @@ function App() {
         <div className={`generated-text ${isEditingPrompt ? 'editing' : ''}`} aria-live="polite">
           {isEditingPrompt ? <div className="prompt-editor">
             <label htmlFor="prompt">Starting prompt</label>
-            <textarea autoFocus id="prompt" onChange={(event) => setPromptDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') setIsEditingPrompt(false); if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) savePrompt(); }} rows={3} value={promptDraft} />
-            <div className="prompt-editor-actions"><span>{activePath.length > 0 ? 'Saving a change starts a new story tree.' : 'Press ⌘ Enter to save.'}</span><button aria-label="Cancel prompt edit" onClick={() => setIsEditingPrompt(false)} title="Cancel" type="button"><X size={16} /></button><button aria-label="Save starting prompt" disabled={!promptDraft.trim()} onClick={savePrompt} title="Save prompt" type="button"><Check size={16} /></button></div>
+            <textarea autoFocus id="prompt" onChange={(event) => setPromptDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') setIsEditingPrompt(false); if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); savePrompt(); } }} rows={3} value={promptDraft} />
+            <div className="prompt-editor-actions"><span>{activePath.length > 0 ? 'Enter saves and starts a new story tree.' : 'Enter to save · Shift Enter for a new line.'}</span><button aria-label="Cancel prompt edit" onClick={() => setIsEditingPrompt(false)} title="Cancel" type="button"><X size={16} /></button><button aria-label="Save starting prompt" disabled={!promptDraft.trim()} onClick={savePrompt} title="Save prompt" type="button"><Check size={16} /></button></div>
           </div> : <><button className="prompt-text" onClick={beginPromptEdit} title="Edit starting prompt" type="button"><span>{prompt}</span><Pencil size={14} /></button>{activePath.map((node, index) => <button className={`story-token ${node.id === selectedNodeId ? 'selected' : ''} ${selectedIndex >= 0 && index > selectedIndex ? 'future' : ''}`} key={node.id} onClick={() => setSelectedNodeId(node.id)} title={`Inspect ${visibleToken(node.token)}`} type="button">{node.token}</button>)}{activePath.length === 0 && <em>Click the opening text to edit it, or load a model and step forward.</em>}</>}
         </div>
         <div className="generation-controls">
@@ -234,8 +234,15 @@ function App() {
         <div className="current-branch"><GitBranch size={18} /><div><strong>{selectedNodeId === activeLeafId ? 'Current ending' : 'Earlier position'}</strong><p>{selectedNodeId === ROOT_ID ? 'Before the first token' : contextLabel(tree, selectedNodeId, prompt)}</p></div></div>
         {tree[ROOT_ID].children.length === 0 ? <p className="branch-empty">Generate a token, then choose alternatives to grow nested paths.</p> : <div className="tree-list">{tree[ROOT_ID].children.map(function renderNode(nodeId): React.ReactNode {
           const node = tree[nodeId];
-          const orderedChildren = [...node.children].sort((left, right) => Number(activePathIds.has(right)) - Number(activePathIds.has(left)));
-          return <div className="tree-node" key={node.id}><button className={`${node.id === selectedNodeId ? 'selected' : ''} ${activePathIds.has(node.id) ? 'active-path' : ''}`} onClick={() => visitNode(node.id)} title={visibleToken(node.token)} type="button"><span>{visibleToken(node.token) || '∅'}</span><p>{contextLabel(tree, node.id, prompt)}</p></button>{orderedChildren.length > 0 && <div className={`tree-children ${orderedChildren.length === 1 ? 'continuation' : 'variations'}`}>{orderedChildren.map(renderNode)}</div>}</div>;
+          const run = [node];
+          let runEnd = node;
+          while (!activePathIds.has(runEnd.id) && runEnd.children.length === 1 && !activePathIds.has(runEnd.children[0])) {
+            runEnd = tree[runEnd.children[0]];
+            run.push(runEnd);
+          }
+          const compactText = run.map((item) => item.token).join('').trim();
+          const orderedChildren = [...runEnd.children].sort((left, right) => Number(activePathIds.has(right)) - Number(activePathIds.has(left)));
+          return <div className="tree-node" key={node.id}><button className={`${runEnd.id === selectedNodeId ? 'selected' : ''} ${activePathIds.has(node.id) ? 'active-path' : ''} ${run.length > 1 ? 'compact-run' : ''}`} onClick={() => visitNode(runEnd.id)} title={compactText || visibleToken(node.token)} type="button"><span>{run.length > 1 ? `${run.length} tokens` : visibleToken(node.token) || '∅'}</span><p>{run.length > 1 ? compactText : contextLabel(tree, node.id, prompt)}</p></button>{orderedChildren.length > 0 && <div className={`tree-children ${orderedChildren.length === 1 ? 'continuation' : 'variations'}`}>{orderedChildren.map(renderNode)}</div>}</div>;
         })}</div>}
       </aside>
     </section>
