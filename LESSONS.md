@@ -61,9 +61,9 @@ At each step, many tokens could be chosen. Once one is selected, most interfaces
 
 **Thesis:** Choosing one different token changes the context, which can change every later probability.
 
-The model recalculates after each token. Three presets force only the first choice—`sc`, `excited`, or `happy`—and then generate 35 more tokens with the same seed and temperature. The difference is not a stored alternate answer; each first token creates a new sequence of conditional predictions.
+The model recalculates after each token. Four presets force only the first choice—`sc`, `excited`, `happy`, or `sad`—and then generate 35 more tokens with the same seed and temperature. The `sad` continuation is especially revealing: it treats the bear as the one feeling sad and has the robot try to cheer him up. One early choice changes how the model resolves the ambiguous “He,” then each subsequent prediction builds on that interpretation.
 
-**Try it:** Use Next and Prev to flip among the three 35-token continuations.
+**Try it:** Use Next and Prev to flip among the four 35-token continuations.
 
 ## 7. Models can disagree while using the same basic process
 
