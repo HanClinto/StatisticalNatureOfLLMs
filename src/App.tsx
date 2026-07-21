@@ -188,16 +188,15 @@ function NextTokenLab() {
 
   useEffect(() => {
     if (!guideCallout) return;
-    const frame = window.requestAnimationFrame(() => {
-      const mobileProbabilityGuide = guideCallout.target === 'probabilities' && window.matchMedia('(max-width: 700px)').matches;
-      document.querySelector(`[data-guide-target="${guideCallout.target}"] .guide-callout`)?.scrollIntoView({ behavior: 'smooth', block: mobileProbabilityGuide ? 'start' : 'center' });
-    });
+    const scrollTimer = window.setTimeout(() => {
+      document.querySelector('.analysis-board')?.scrollIntoView({ behavior: document.hidden ? 'auto' : 'smooth', block: 'start' });
+    }, 0);
     const dismissOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setGuideCallout(null);
     };
     window.addEventListener('keydown', dismissOnEscape);
     return () => {
-      window.cancelAnimationFrame(frame);
+      window.clearTimeout(scrollTimer);
       window.removeEventListener('keydown', dismissOnEscape);
     };
   }, [guideCallout]);
