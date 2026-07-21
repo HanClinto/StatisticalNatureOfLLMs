@@ -11,12 +11,12 @@ The sequence moves from the basic mechanism to its consequences. It is written f
 The model does not retrieve a finished answer or commit an entire sentence at once. The robot scenario starts with a whole-word token so the visible progression is clear:
 
 - **Possible next pieces:** “a” and other continuations receive probabilities, but nothing has been committed yet.
-- **Commit one word:** the whole-word token “a” joins this generation path. Standard generation does not revise earlier tokens unless the surrounding software edits or restarts the sequence.
+- **Predict after “a”:** the whole-word token “a” joins the context, then the model scores a new set of possibilities for what follows it. The selected next token and its probability panel make the changed distribution visible.
 - **Keep predicting:** the model repeatedly uses the changed context to select another token, building a longer continuation.
 
 The first selected token happens to be a whole word, but models actually generate tokens, which may also be word pieces or punctuation. The model may assign probabilities based on patterns that extend beyond the immediate token, but later tokens have not yet been selected.
 
-**Try it:** Use Next and Prev to move through one prediction cycle.
+**Try it:** Use Next and Prev to compare the initial choices with the new prediction made after “a.”
 
 ## 2. Models build text from tokens, not always whole words
 

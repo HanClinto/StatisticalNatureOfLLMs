@@ -47,7 +47,7 @@ export const LESSONS: Lesson[] = [
     id: 'predicts-next',
     thesis: 'A language model predicts what could come next, one piece at a time.',
     explanation: 'It looks at the text so far, scores possible next tokens, and selects one. A token can be a word or a word piece; this example starts with a whole word so the progression is easy to see.',
-    experiment: 'Compare possible tokens, commit the word “a,” and watch the model continue one token at a time.',
+    experiment: 'Compare possible tokens, inspect the next prediction after “a” joins the context, and watch the model keep going.',
     demo: {
       prompt: FIRST_PREDICTION_PROMPT,
       target: 'probabilities',
@@ -61,7 +61,7 @@ export const LESSONS: Lesson[] = [
       temperature: 0.8,
       scenarios: [
         { label: 'Possible next pieces' },
-        { label: 'Commit one word', target: 'tokens', title: 'The choice joins the context', callout: 'The token “ a” is now committed to this path, so the visible story has changed. This token happens to be a whole word; other tokens can be word pieces or punctuation.', focusToken: 0 },
+        { label: 'Predict after “a”', target: 'probabilities', title: 'The next prediction uses new context', callout: 'First, “ a” joined the context. The model then scored what could follow that changed text and selected the highlighted token. These are the odds for the prediction after “a,” not the original choices shown in Step 1.', paths: [{ tokens: [' a'], steps: 1 }], focusToken: 1 },
         { label: 'Keep predicting', target: 'tokens', title: 'The cycle builds a continuation', callout: 'The model has repeated the same process several more times. Each new token joined the context before the model predicted the next one.', paths: [{ tokens: [' a'], steps: 7 }], focusToken: 7 },
       ],
     },
