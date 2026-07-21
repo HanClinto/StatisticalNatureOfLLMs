@@ -58,7 +58,7 @@ Temperature changes how the sampler uses the model's scores; it does not add kno
 
 **Thesis:** The model's probabilities describe likely text continuations, not the outcomes of physical simulations or uniform random processes.
 
-A fair coin has a 50% physical chance of landing on either side. Given “I flipped a fair coin. It came up”, however, SmolLM2 assigns 74.9% to lowercase `heads` and 6.9% to lowercase `tails`. The model did not flip or observe a coin. It scored how the sentence was likely to continue based on learned language patterns.
+A fair coin has a 50% physical chance of landing on either side. Given “I flipped a fair coin. It came up”, however, SmolLM2 assigns 74.9% to lowercase `heads` and 6.9% to lowercase `tails`. The model did not flip or observe a coin. It predicted what a likely writer of similar text would write next, based on patterns learned during training.
 
 The number example makes the same distinction in a larger distribution. After “When people are asked to pick a random number between 1 and 10, the most common answer is ”, SmolLM2 gives `1` 35.3%, `2` 17.3%, `3` 16.3%, and `7` 2.1%. A uniform number picker would give every number 10%.
 
