@@ -1,6 +1,6 @@
-# Statistical Nature of LLMs
+# Statistical Nature of LLMs: Interactive Logprobs Explorer
 
-An in-browser next-token laboratory for seeing how language models weigh possible continuations. Inference runs locally with [wllama](https://github.com/ngxson/wllama); prompts and generated text are not sent to an inference service.
+An interactive, in-browser logprobs explorer for seeing next-token probabilities and how language models weigh possible continuations. Inference runs locally with [wllama](https://github.com/ngxson/wllama); prompts and generated text are not sent to an inference service.
 
 Try it at [hanclinto.github.io/StatisticalNatureOfLLMs](https://hanclinto.github.io/StatisticalNatureOfLLMs/).
 

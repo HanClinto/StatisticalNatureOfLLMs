@@ -459,7 +459,7 @@ function NextTokenLab() {
       <div className="topbar-actions"><div className="privacy-note"><Database size={15} /> Runs and stays in your browser</div><a aria-label="View source code on GitHub" className="source-link" href="https://github.com/HanClinto/StatisticalNatureOfLLMs" rel="noreferrer" target="_blank" title="View source code on GitHub"><CodeXml size={17} /> <span>Source</span></a></div>
     </header>
     <section className="intro">
-      <p className="eyebrow">The statistical nature of language models</p>
+      <p className="eyebrow">Interactive logprobs explorer</p>
       <h1>Watch a model choose what comes next.</h1>
       <a className={`lede lesson-link ${lessonFading ? 'fading' : ''}`} href={`#lesson-${currentLesson.id}`} onBlur={() => setLessonPaused(false)} onClick={() => setExpandedLessonId(currentLesson.id)} onFocus={() => setLessonPaused(true)} onMouseEnter={() => setLessonPaused(true)} onMouseLeave={() => setLessonPaused(false)}>
         <span><b>Lesson {lessonIndex + 1}:</b> {currentLesson.thesis}</span>
