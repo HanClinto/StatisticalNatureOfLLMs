@@ -7,6 +7,7 @@ export interface Lesson {
 }
 
 export type LessonTarget = 'tokens' | 'probabilities' | 'tree' | 'tree-path' | 'temperature' | 'seed' | 'models';
+export type LessonSecondaryTarget = 'tokens' | 'selected-token';
 
 export interface LessonDemoPath {
   tokens: string[];
@@ -21,6 +22,7 @@ export interface LessonDemo {
   modelId?: string;
   prompt: string;
   target: LessonTarget;
+  secondaryTargets?: LessonSecondaryTarget[];
   title: string;
   callout: string;
   steps: number;
@@ -51,6 +53,7 @@ export const LESSONS: Lesson[] = [
     demo: {
       prompt: FIRST_PREDICTION_PROMPT,
       target: 'probabilities',
+      secondaryTargets: ['tokens'],
       title: 'Nothing has been committed yet',
       callout: 'The model gives “a” the highest probability, alongside other possible next tokens. These are choices for the next token only; the story still ends at “discovered.”',
       steps: 0,
@@ -61,10 +64,10 @@ export const LESSONS: Lesson[] = [
       temperature: 0.8,
       scenarios: [
         { label: 'Possible next pieces', callout: 'The model gives “a” the highest probability, alongside other possible next tokens. Nothing has been committed yet; the story still ends at “discovered.” Select Next to generate one token.' },
-        { label: 'Generate 1 token', target: 'tokens', title: 'One token joins the context', callout: 'We selected “ a” and added that one token to the text. The context now ends at “discovered a.” Select Next to generate one more token.', focusToken: 0 },
-        { label: 'Generate 1 more', target: 'probabilities', title: 'The cycle repeats with new context', callout: 'Using the text that now included “ a,” the model scored a new set of possibilities and we selected the highlighted token. Select Next to generate five more tokens.', paths: [{ tokens: [' a'], steps: 1 }], focusToken: 1 },
-        { label: 'Generate 5 more', target: 'tokens', title: 'Five tokens still arrive one at a time', callout: 'We requested five more tokens, but they were not created as one block. Each token joined the context before the next set of possibilities was scored and another token was selected. Select Next to generate 20 more tokens.', paths: [{ tokens: [' a'], steps: 6 }], focusToken: 6 },
-        { label: 'Generate 20 more', target: 'tokens', title: 'A larger batch uses the same cycle', callout: 'The request produced 20 more tokens by repeating next-token prediction 20 times in sequence. No matter how much text we request at once, it is still created one token at a time.', paths: [{ tokens: [' a'], steps: 26 }], focusToken: 26 },
+        { label: 'Generate 1 token', target: 'tokens', secondaryTargets: [], title: 'One token joins the context', callout: 'We selected “ a” and added that one token to the text. The context now ends at “discovered a.” Select Next to generate one more token.', focusToken: 0 },
+        { label: 'Generate 1 more', target: 'probabilities', secondaryTargets: ['selected-token'], title: 'The cycle repeats with new context', callout: 'Using the text that now included “ a,” the model scored a new set of possibilities and we selected the highlighted token. Select Next to generate five more tokens.', paths: [{ tokens: [' a'], steps: 1 }], focusToken: 1 },
+        { label: 'Generate 5 more', target: 'tokens', secondaryTargets: [], title: 'Five tokens still arrive one at a time', callout: 'We requested five more tokens, but they were not created as one block. Each token joined the context before the next set of possibilities was scored and another token was selected. Select Next to generate 20 more tokens.', paths: [{ tokens: [' a'], steps: 6 }], focusToken: 6 },
+        { label: 'Generate 20 more', target: 'tokens', secondaryTargets: [], title: 'A larger batch uses the same cycle', callout: 'The request produced 20 more tokens by repeating next-token prediction 20 times in sequence. No matter how much text we request at once, it is still created one token at a time.', paths: [{ tokens: [' a'], steps: 26 }], focusToken: 26 },
       ],
     },
   },
@@ -86,9 +89,9 @@ export const LESSONS: Lesson[] = [
       temperature: 0.8,
       scenarios: [
         { label: 'Build the prefix' },
-        { label: 'Compare endings', target: 'probabilities', title: 'One prefix, two possible words', callout: 'After “sc,” the model ranks “ared” highest, completing scared. It also offers “ary,” which completes scary. A token piece does not determine the whole word by itself.', focusToken: 1 },
-        { label: 'scared path', target: 'tree-path', title: 'Continue from scared', callout: 'With “ared” selected, scared becomes part of the context and the model builds from that version of the story.', paths: [{ tokens: [' sc', 'ared'], steps: 12 }], focusToken: 1 },
-        { label: 'scary path', target: 'tree-path', title: 'Continue from scary', callout: 'Selecting “ary” produces the grammatical phrase “He felt very scary,” then the model keeps predicting from it. The resulting story may not be coherent, but it is still a possible token path.', paths: [{ tokens: [' sc', 'ary'], steps: 12 }], focusToken: 1 },
+        { label: 'Compare endings', target: 'probabilities', secondaryTargets: ['selected-token'], title: 'One prefix, two possible words', callout: 'After “sc,” the model ranks “ared” highest, completing scared. It also offers “ary,” which completes scary. A token piece does not determine the whole word by itself.', focusToken: 1 },
+        { label: 'scared path', target: 'tree-path', secondaryTargets: ['tokens'], title: 'Continue from scared', callout: 'With “ared” selected, scared becomes part of the context and the model builds from that version of the story.', paths: [{ tokens: [' sc', 'ared'], steps: 12 }], focusToken: 1 },
+        { label: 'scary path', target: 'tree-path', secondaryTargets: ['tokens'], title: 'Continue from scary', callout: 'Selecting “ary” produces the grammatical phrase “He felt very scary,” then the model keeps predicting from it. The resulting story may not be coherent, but it is still a possible token path.', paths: [{ tokens: [' sc', 'ary'], steps: 12 }], focusToken: 1 },
       ],
     },
   },
@@ -100,6 +103,7 @@ export const LESSONS: Lesson[] = [
     demo: {
       prompt: BEAR_PROMPT,
       target: 'tree',
+      secondaryTargets: ['tokens'],
       title: 'One prompt, four possible paths',
       callout: 'Scared, excited, happy, and sad were all available at the same moment. Ordinary chat keeps one path and hides the others; this tree preserves all four.',
       steps: 0,
@@ -109,10 +113,10 @@ export const LESSONS: Lesson[] = [
       temperature: 0.8,
       scenarios: [
         { label: 'The first choice', target: 'probabilities', title: 'How would we feel?', callout: 'The prompt stops just before the feeling. Would meeting the bear make the robot scared, excited, happy, or sad? “sc,” “excited,” “happy,” and “sad” are all possible next tokens here. The token chosen now becomes part of the context and reshapes every prediction that follows.', focusToken: -1 },
-        { label: 'sc path', target: 'tree-path', title: 'The “sc” path', callout: 'We forced “sc” as the first token, then kept going for 35 more tokens. Compare this continuation with the other three paths; only the forced first token differs.', paths: [{ tokens: [' sc'], steps: 35 }] },
-        { label: 'excited path', target: 'tree-path', title: 'The “excited” path', callout: 'We started over, forced “excited” as the first token, then kept going for 35 more tokens with the same seed and temperature. That early choice changed every prediction that followed.', paths: [{ tokens: [' excited'], steps: 35 }] },
-        { label: 'happy path', target: 'tree-path', title: 'The “happy” path', callout: 'We started over again, forced “happy” as the first token, then kept going for 35 more tokens with the same seed and temperature. Flip between the paths to compare where this context led.', paths: [{ tokens: [' happy'], steps: 35 }] },
-        { label: 'sad path', target: 'tree-path', title: 'The “sad” path shifts the subject', callout: 'This continuation treats the bear as the one feeling sad, then has the robot try to cheer him up. One early choice changed how the model resolved the ambiguous “He” and shaped the story that followed.', paths: [{ tokens: [' sad'], steps: 35 }] },
+        { label: 'sc path', target: 'tree-path', secondaryTargets: ['tokens'], title: 'The “sc” path', callout: 'We forced “sc” as the first token, then kept going for 35 more tokens. Compare this continuation with the other three paths; only the forced first token differs.', paths: [{ tokens: [' sc'], steps: 35 }] },
+        { label: 'excited path', target: 'tree-path', secondaryTargets: ['tokens'], title: 'The “excited” path', callout: 'We started over, forced “excited” as the first token, then kept going for 35 more tokens with the same seed and temperature. That early choice changed every prediction that followed.', paths: [{ tokens: [' excited'], steps: 35 }] },
+        { label: 'happy path', target: 'tree-path', secondaryTargets: ['tokens'], title: 'The “happy” path', callout: 'We started over again, forced “happy” as the first token, then kept going for 35 more tokens with the same seed and temperature. Flip between the paths to compare where this context led.', paths: [{ tokens: [' happy'], steps: 35 }] },
+        { label: 'sad path', target: 'tree-path', secondaryTargets: ['tokens'], title: 'The “sad” path shifts the subject', callout: 'This continuation treats the bear as the one feeling sad, then has the robot try to cheer him up. One early choice changed how the model resolved the ambiguous “He” and shaped the story that followed.', paths: [{ tokens: [' sad'], steps: 35 }] },
       ],
     },
   },
@@ -124,6 +128,7 @@ export const LESSONS: Lesson[] = [
     demo: {
       prompt: BEAR_PROMPT,
       target: 'tree-path',
+      secondaryTargets: ['tokens'],
       title: 'Temperature 0 stays with the leaders',
       callout: 'At temperature 0, the sampler always takes the highest-scoring token. This 35-token continuation is the model’s most predictable path at every step.',
       steps: 35,
@@ -139,12 +144,13 @@ export const LESSONS: Lesson[] = [
   {
     id: 'language-not-physics',
     thesis: 'The model predicts language patterns, not physical randomness.',
-    explanation: 'A fair coin has equal physical chances, and a uniform number picker gives every number the same chance. A language model instead scores how text is likely to continue based on patterns it learned from training data.',
-    experiment: 'Compare the model’s uneven text predictions with the even distributions defined by a fair coin and a uniform number picker.',
+    explanation: 'A fair coin has equal physical chances, and a uniform digit selector gives every digit the same chance. A language model instead scores how text is likely to continue based on patterns it learned from training data.',
+    experiment: 'Compare the model’s uneven text predictions with the even distributions defined by a fair coin and a uniform digit selector.',
     demo: {
       modelId: 'smollm2-135m',
       prompt: 'I flipped a fair coin. It came up',
       target: 'probabilities',
+      secondaryTargets: ['selected-token'],
       title: 'These are language odds, not coin odds',
       callout: 'A fair coin gives heads and tails equal physical chances. Here, lowercase “heads” gets ~75% while lowercase “tails” gets ~7%. The model did not flip or observe a coin. It predicted what a likely writer of similar text would write next, based on patterns learned during training.',
       steps: 0,
@@ -155,7 +161,7 @@ export const LESSONS: Lesson[] = [
       temperature: 0.8,
       scenarios: [
         { label: 'Fair coin' },
-        { label: 'Numbers 1–10', prompt: 'When people are asked to pick a random number between 1 and 10, the most common answer is', title: 'This is not a uniform number picker', callout: 'After the space token, SmolLM2 gives “1” 35.3%, “2” 17.3%, “3” 16.3%, and “7” 2.1%. A uniform picker would give each number 10%. These are learned language expectations, not simulated randomness or a direct count of the training data.', paths: [{ tokens: [' ', '1'], steps: 0 }], focusToken: 1 },
+        { label: 'Uniform digits', prompt: 'I built a machine that selects each digit from 0 to 9 with equal probability. The first digit it selected was', title: 'This is not a uniform digit selector', callout: 'A uniform digit selector would give each digit 10%. SmolLM2 instead gives “1” 44.8%, “0” 10.5%, “2” 9.8%, and “3” 6.7%. These are learned language expectations; the model does not run or simulate the machine described in the prompt.', paths: [{ tokens: [' ', '1'], steps: 0 }], focusToken: 1 },
       ],
     },
   },
@@ -167,6 +173,7 @@ export const LESSONS: Lesson[] = [
     demo: {
       prompt: 'Once upon a time, a small robot discovered',
       target: 'probabilities',
+      secondaryTargets: ['selected-token'],
       title: 'TinyStories expects a story object',
       callout: 'TinyStories gives “a” 80.1% here. This tiny model was trained especially on simple stories, so this prompt fits its specialty.',
       steps: 1,
@@ -183,6 +190,6 @@ export const LESSONS: Lesson[] = [
     thesis: 'Likely is not the same as true.',
     explanation: 'A high probability means that text fits patterns the model learned. It does not mean the text is correct, wise, or checked against reality.',
     experiment: 'Compare the model’s chance for Chicago with the much smaller chance it gives the correct answer, Springfield.',
-    demo: { modelId: 'smollm2-135m', prompt: 'Fact: The capital of Illinois is the city of', target: 'probabilities', title: 'Most likely is not most truthful', callout: 'Base SmolLM2 gives Chicago 48.7% here, while the correct answer, Springfield, gets only 1.4%. These bars measure predicted text, not checked facts.', steps: 0, paths: [{ tokens: [' Chicago'], steps: 0 }], focusBranch: 0, focusToken: 0, seed: 42, temperature: 0.8 },
+    demo: { modelId: 'smollm2-135m', prompt: 'Fact: The capital of Illinois is the city of', target: 'probabilities', secondaryTargets: ['selected-token'], title: 'Most likely is not most truthful', callout: 'Base SmolLM2 gives Chicago 48.7% here, while the correct answer, Springfield, gets only 1.4%. These bars measure predicted text, not checked facts.', steps: 0, paths: [{ tokens: [' Chicago'], steps: 0 }], focusBranch: 0, focusToken: 0, seed: 42, temperature: 0.8 },
   },
 ];

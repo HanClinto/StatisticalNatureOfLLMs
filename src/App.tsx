@@ -56,6 +56,7 @@ function contextLabel(tree: StoryTree, nodeId: string, prompt: string) {
 
 interface GuideCalloutState {
   target: import('./lessons').LessonTarget;
+  secondaryTargets?: import('./lessons').LessonSecondaryTarget[];
   title: string;
   body: string;
   lessonId?: string;
@@ -409,7 +410,7 @@ function NextTokenLab() {
       setTemperature(demoTemperature);
       setFixedSeed(true);
       setSeed(demoSeed);
-      setGuideCallout({ target: demo.target, title: demo.title, body: demo.callout, lessonId: lesson.id, scenarioIndex: lesson.demo.scenarios ? scenarioIndex : undefined, scenarioCount: lesson.demo.scenarios?.length });
+      setGuideCallout({ target: demo.target, secondaryTargets: demo.secondaryTargets ?? [], title: demo.title, body: demo.callout, lessonId: lesson.id, scenarioIndex: lesson.demo.scenarios ? scenarioIndex : undefined, scenarioCount: lesson.demo.scenarios?.length });
     } catch (caught) { setError(caught instanceof Error ? caught.message : String(caught)); }
     finally { setStatus('idle'); setActiveDemoId(null); }
   }
@@ -467,12 +468,12 @@ function NextTokenLab() {
       </aside>
       <div className="analysis-board">
         <div className="board-toolbar"><div><span className={`status-dot ${isLoaded ? 'ready' : ''}`} />{isLoaded ? model.name : 'No model loaded'}</div><button aria-label="Reset generation" onClick={reset} title="Reset generation" type="button"><RotateCcw size={17} /></button></div>
-        <div className={`guide-target generated-text ${isEditingPrompt ? 'editing' : ''}`} aria-live="polite" data-guide-target="tokens">
+        <div className={`guide-target generated-text ${isEditingPrompt ? 'editing' : ''} ${guideCallout?.secondaryTargets?.includes('tokens') ? 'guide-secondary' : ''}`} aria-live="polite" data-guide-target="tokens">
           {isEditingPrompt ? <div className="prompt-editor">
             <label htmlFor="prompt">Starting prompt</label>
             <textarea autoFocus id="prompt" onChange={(event) => setPromptDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') setIsEditingPrompt(false); if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); savePrompt(); } }} rows={3} value={promptDraft} />
             <div className="prompt-editor-actions"><span>{activePath.length > 0 ? 'Enter saves this as another prompt root.' : 'Enter to save · Shift Enter for a new line.'}</span><button aria-label="Cancel prompt edit" onClick={() => setIsEditingPrompt(false)} title="Cancel" type="button"><X size={16} /></button><button aria-label="Save starting prompt" disabled={!promptDraft.trim()} onClick={savePrompt} title="Save prompt" type="button"><Check size={16} /></button></div>
-          </div> : <><button className="prompt-text" onClick={beginPromptEdit} title="Edit starting prompt" type="button"><span>{prompt}</span><Pencil size={14} /></button>{activePath.map((node, index) => <button className={`story-token ${node.id === selectedNodeId ? 'selected' : ''} ${selectedIndex >= 0 && index > selectedIndex ? 'future' : ''}`} key={node.id} onClick={() => setSelectedNodeId(node.id)} title={`Inspect ${visibleToken(node.token)}`} type="button">{node.token}</button>)}{activePath.length === 0 && <em>Click the opening text to edit it, or load a model and step forward.</em>}</>}
+          </div> : <><button className="prompt-text" onClick={beginPromptEdit} title="Edit starting prompt" type="button"><span>{prompt}</span><Pencil size={14} /></button>{activePath.map((node, index) => <button className={`story-token ${node.id === selectedNodeId ? 'selected' : ''} ${node.id === selectedNodeId && guideCallout?.secondaryTargets?.includes('selected-token') ? 'guide-secondary' : ''} ${selectedIndex >= 0 && index > selectedIndex ? 'future' : ''}`} key={node.id} onClick={() => setSelectedNodeId(node.id)} title={`Inspect ${visibleToken(node.token)}`} type="button">{node.token}</button>)}{activePath.length === 0 && <em>Click the opening text to edit it, or load a model and step forward.</em>}</>}
           <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} onNavigate={navigateGuide} target="tokens" />
         </div>
         <div className="generation-controls">
