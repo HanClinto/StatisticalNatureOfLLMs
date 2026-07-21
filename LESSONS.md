@@ -41,23 +41,17 @@ The presets change one control at a time:
 
 **Try it:** Switch among the presets and watch which parts of the experiment change.
 
-## 4. One answer hides a tree of possible answers
+## 4. One early choice can reshape the whole continuation
 
-**Thesis:** A chat window shows one path, but generation is really a branching tree of possible continuations.
+**Thesis:** A chat window hides the other paths that were possible, and choosing one path changes every prediction that follows.
 
-At each step, many tokens could be chosen. Once one is selected, most interfaces hide the alternatives. The story tree keeps those roads visible and lets a learner return to an earlier position without losing the other continuation.
+The first preset reveals four alternatives—`sc`, `excited`, `happy`, and `sad`—that were available at the same point. Ordinary chat would keep only one. The next four presets force one of those first choices and generate 35 more tokens with the same seed and temperature, making the consequences directly comparable.
 
-**Try it:** Click an alternative candidate and watch a new branch appear.
+The `sad` continuation is especially revealing: it treats the bear as the one feeling sad and has the robot try to cheer him up. One early choice changes how the model resolves the ambiguous “He,” then each subsequent prediction builds on that interpretation.
 
-## 5. A small early choice can reshape everything that follows
+**Try it:** Reveal the hidden alternatives, then use Next and Prev to flip among their four 35-token continuations.
 
-**Thesis:** Choosing one different token changes the context, which can change every later probability.
-
-The model recalculates after each token. Four presets force only the first choice—`sc`, `excited`, `happy`, or `sad`—and then generate 35 more tokens with the same seed and temperature. The `sad` continuation is especially revealing: it treats the bear as the one feeling sad and has the robot try to cheer him up. One early choice changes how the model resolves the ambiguous “He,” then each subsequent prediction builds on that interpretation.
-
-**Try it:** Use Next and Prev to flip among the four 35-token continuations.
-
-## 6. Models can disagree while using the same basic process
+## 5. Models can disagree while using the same basic process
 
 **Thesis:** Different models can assign different odds to the same prompt, even though they all generate one token at a time.
 
@@ -65,7 +59,7 @@ Training data, model size, and training goals shape the patterns a model learns.
 
 **Try it:** Switch between the TinyStories and SmolLM2 presets and compare their candidate lists.
 
-## 7. Likely is not the same as true
+## 6. Likely is not the same as true
 
 **Thesis:** A high probability means "this fits patterns the model learned," not "this is correct."
 
