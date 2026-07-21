@@ -146,7 +146,7 @@ export const LESSONS: Lesson[] = [
       prompt: 'I flipped a fair coin. It came up',
       target: 'probabilities',
       title: 'These are language odds, not coin odds',
-      callout: 'A fair coin gives heads and tails equal physical chances. Here, lowercase “heads” gets 74.9% while lowercase “tails” gets 6.9%. The model did not flip or observe a coin. It predicted what a likely writer of similar text would write next, based on patterns learned during training.',
+      callout: 'A fair coin gives heads and tails equal physical chances. Here, lowercase “heads” gets ~75% while lowercase “tails” gets ~7%. The model did not flip or observe a coin. It predicted what a likely writer of similar text would write next, based on patterns learned during training.',
       steps: 0,
       paths: [{ tokens: [' heads'], steps: 0 }],
       focusBranch: 0,
