@@ -22,9 +22,9 @@ The first selected token happens to be a whole word, but models actually generat
 
 **Thesis:** A token is one piece the model can predict. It may be a whole word, part of a word, punctuation, or a space joined to what follows.
 
-The interface reveals one generated token at a time. In the bear scenario, TinyStories builds the word “scared” from the separate tokens ` sc` and `ared`, making the difference between human words and model pieces concrete.
+The interface reveals one generated token at a time. In the bear scenario, TinyStories first produces the shared prefix ` sc`. Its most likely next token is `ared`, completing “scared,” but the lower-probability token `ary` can complete “scary” instead. The lesson follows both choices into short continuations to show that one token piece can begin multiple words, and that a possible token path is not guaranteed to produce a coherent story.
 
-**Try it:** Inspect the two token buttons that form the single word scared.
+**Try it:** Build the prefix, compare its possible endings, then follow the scared and scary paths.
 
 ## 3. The model offers chances; the sampler makes the pick
 

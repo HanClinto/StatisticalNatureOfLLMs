@@ -81,6 +81,11 @@ function applyTemperature(candidates: TokenCandidate[], temperature: number) {
   });
 }
 
+function formatProbability(probability: number) {
+  const percentage = probability * 100;
+  return percentage > 0 && percentage < 0.1 ? '<0.1%' : `${percentage.toFixed(1)}%`;
+}
+
 function FutureChatPage() {
   return <main className="future-page">
     <header className="topbar">
@@ -503,7 +508,7 @@ function NextTokenLab() {
         <section className="guide-target probability-panel" data-guide-target="probabilities">
           <div className="panel-title"><div><Sparkles size={18} /><h2>{selectedToken ? `Odds for ${visibleToken(selectedToken)}` : 'What the model considered'}</h2></div><span>click an alternative to branch</span></div>
           {candidates.length === 0 ? <div className="empty-probabilities"><div className="ghost-bars"><i /><i /><i /><i /></div><p>Step forward to reveal the next-token landscape.</p></div> : <div className="candidate-list">{candidates.map((candidate) => <button className={candidate.token === selectedToken ? 'sampled' : ''} key={`${candidate.token}-${candidate.logprob}`} onClick={() => chooseCandidate(candidate)} type="button">
-            <code>{visibleToken(candidate.token) || '∅'}</code><span className="probability-track"><i style={{ width: `${Math.max(1, candidate.probability * 100)}%` }} /></span><strong>{(candidate.probability * 100).toFixed(1)}%</strong><small>log p {candidate.logprob.toFixed(2)}</small>{candidate.token === selectedToken && <b>viewing</b>}
+            <code>{visibleToken(candidate.token) || '∅'}</code><span className="probability-track"><i style={{ width: `${Math.max(1, candidate.probability * 100)}%` }} /></span><strong>{formatProbability(candidate.probability)}</strong><small>log p {candidate.logprob.toFixed(2)}</small>{candidate.token === selectedToken && <b>viewing</b>}
           </button>)}</div>}
           <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} onNavigate={navigateGuide} target="probabilities" />
         </section>
