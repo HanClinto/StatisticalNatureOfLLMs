@@ -82,10 +82,11 @@ These lessons reveal what chat software adds around the same token-prediction me
 - Role markers, separators, begin/end markers, and generation prompts are tokens or text in the sequence.
 - Different model families use different templates.
 - Sending the wrong template can sharply reduce an otherwise capable model's performance.
+- Once the sequence is assembled, the model does not inherently know whether ordinary earlier tokens were typed by a person, pasted by software, or generated in a previous step.
 
 **Future GUI:** Provide synchronized views for chat bubbles, the rendered template, token boundaries, and token IDs. Selecting an item in one view should highlight its representation in the others.
 
-**Experiment:** Render the same messages with two templates, then run a model with its expected template and an incompatible one.
+**Experiment:** First, render the same messages with two templates and run a model with its expected template and an incompatible one. Then compare identical text reached through generation and through a pasted prompt; the next-token probabilities should match. Finally, insert a false assistant answer into the history and observe whether asking for an explanation produces a plausible invented justification.
 
 ### 6. Special tokens are learned markers, not magic commands
 

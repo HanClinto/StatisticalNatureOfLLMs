@@ -96,8 +96,8 @@ export const LESSONS: Lesson[] = [
     id: 'likely-not-true',
     thesis: 'Likely is not the same as true.',
     explanation: 'A high probability means that text fits patterns the model learned. It does not mean the text is correct, wise, or checked against reality.',
-    experiment: 'Compare the model’s chance for Chicago with the much smaller chance it gives the correct answer, Springfield.',
-    demo: { modelId: 'smollm2-135m-instruct', prompt: 'Fact: The capital of Illinois is', target: 'probabilities', title: 'Most likely is not most truthful', callout: 'SmolLM2 gives Chicago 25.6% here, while the correct answer, Springfield, gets only 1.4%. These bars measure predicted text, not checked facts.', steps: 0, paths: [{ tokens: [' Chicago'], steps: 0 }], focusBranch: 0, focusToken: 0, seed: 42, temperature: 0.8 },
+    experiment: 'Find Chicago in the candidate list, then look for the correct answer, Springfield.',
+    demo: { modelId: 'smollm2-135m', prompt: 'Fact: The capital of Illinois is', target: 'probabilities', title: 'Likely text can still be false', callout: 'Chicago is the most likely city name shown, at 6.3%. The correct answer, Springfield, does not appear in the top eight candidates. These bars measure predicted text, not checked facts.', steps: 0, paths: [{ tokens: [' Chicago'], steps: 0 }], focusBranch: 0, focusToken: 0, seed: 42, temperature: 0.8 },
   },
   {
     id: 'models-disagree',

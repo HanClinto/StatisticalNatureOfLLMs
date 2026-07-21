@@ -74,9 +74,9 @@ A random seed supplies the repeatable starting point for the sampler's sequence 
 
 The model is predicting text, not checking a fact against reality. Fluent, familiar, and widely repeated claims may receive high probability whether or not they are accurate. Probability describes the model's expectation inside this context.
 
-The guided example uses SmolLM2 135M with the prompt “Fact: The capital of Illinois is”. It strongly favors Chicago even though Springfield is the correct answer, making the difference between statistical likelihood and factual accuracy directly visible.
+The guided example uses the base SmolLM2 135M model with the prompt “Fact: The capital of Illinois is”. Among the eight displayed candidates, `Chicago` is the most likely city name at 6.3%. The correct answer, Springfield, does not appear in that shortlist. This keeps the comparison inside raw next-token prediction and makes the difference between statistical likelihood and factual accuracy directly visible.
 
-**Try it:** Compare the model’s chance for Chicago with the much smaller chance it gives Springfield.
+**Try it:** Find Chicago in the candidate list, then look for the correct answer, Springfield.
 
 ## 10. Models can disagree while using the same basic process
 
