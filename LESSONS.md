@@ -61,9 +61,9 @@ At each step, many tokens could be chosen. Once one is selected, most interfaces
 
 **Thesis:** Choosing one different token changes the context, which can change every later probability.
 
-The model recalculates after each token. Two branches that differ by one small piece can begin similarly and then move toward very different endings. The difference is not a stored alternate answer; each branch creates a new sequence of conditional predictions.
+The model recalculates after each token. Three presets force only the first choice—`sc`, `excited`, or `happy`—and then generate 35 more tokens with the same seed and temperature. The difference is not a stored alternate answer; each first token creates a new sequence of conditional predictions.
 
-**Try it:** Branch near the beginning, then grow both paths several tokens.
+**Try it:** Use Next and Prev to flip among the three 35-token continuations.
 
 ## 7. Models can disagree while using the same basic process
 

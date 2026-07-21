@@ -111,9 +111,24 @@ export const LESSONS: Lesson[] = [
   {
     id: 'early-choices',
     thesis: 'A small early choice can reshape everything that follows.',
-    explanation: 'Each selected token becomes part of the next prediction. Two branches that differ by one small piece can move toward very different endings.',
-    experiment: 'Branch near the beginning, then grow both paths several tokens.',
-    demo: { prompt: BEAR_PROMPT, target: 'tree', title: 'The emotion changes what follows', callout: 'These paths differ first at scared, excited, or happy. From there, each choice pulls the continuing story in a different direction.', steps: 0, paths: BEAR_PATHS.map((path) => ({ ...path, steps: 7 })), focusBranch: 0, seed: 42, temperature: 0.8 },
+    explanation: 'Each selected token becomes part of the next prediction. Starting with sc, excited, or happy gives the same model three different contexts for the 35 tokens that follow.',
+    experiment: 'Use Prev and Next to compare three 35-token continuations that differ only in their first selected token.',
+    demo: {
+      prompt: BEAR_PROMPT,
+      target: 'tree',
+      title: 'The “sc” path',
+      callout: 'After selecting “sc,” the model generated 35 more tokens. Compare this continuation with the other two paths; only the first selected token was forced to differ.',
+      steps: 0,
+      paths: [{ tokens: [' sc'], steps: 35 }],
+      focusBranch: 0,
+      seed: 42,
+      temperature: 0.8,
+      scenarios: [
+        { label: 'sc path' },
+        { label: 'excited path', title: 'The “excited” path', callout: 'After selecting “excited,” the model generated 35 more tokens with the same seed and temperature. The early choice changed every prediction that followed.', paths: [{ tokens: [' excited'], steps: 35 }] },
+        { label: 'happy path', title: 'The “happy” path', callout: 'After selecting “happy,” the model generated 35 more tokens with the same seed and temperature. Flip between the paths to compare where this context led.', paths: [{ tokens: [' happy'], steps: 35 }] },
+      ],
+    },
   },
   {
     id: 'models-disagree',
