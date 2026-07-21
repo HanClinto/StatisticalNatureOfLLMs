@@ -110,7 +110,7 @@ export const LESSONS: Lesson[] = [
       seed: 42,
       temperature: 0.8,
       scenarios: [
-        { label: 'Hidden alternatives' },
+        { label: 'The first choice', target: 'probabilities', title: 'How would we feel?', callout: 'The prompt stops just before the feeling. Would meeting the bear make the robot scared, excited, happy, or sad? “sc,” “excited,” “happy,” and “sad” are all possible next tokens here. The token chosen now becomes part of the context and reshapes every prediction that follows.', focusToken: -1 },
         { label: 'sc path', target: 'tree-path', title: 'The “sc” path', callout: 'After selecting “sc,” the model generated 35 more tokens. Compare this continuation with the other three paths; only the first selected token was forced to differ.', paths: [{ tokens: [' sc'], steps: 35 }] },
         { label: 'excited path', target: 'tree-path', title: 'The “excited” path', callout: 'After selecting “excited,” the model generated 35 more tokens with the same seed and temperature. The early choice changed every prediction that followed.', paths: [{ tokens: [' excited'], steps: 35 }] },
         { label: 'happy path', target: 'tree-path', title: 'The “happy” path', callout: 'After selecting “happy,” the model generated 35 more tokens with the same seed and temperature. Flip between the paths to compare where this context led.', paths: [{ tokens: [' happy'], steps: 35 }] },
