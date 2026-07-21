@@ -458,7 +458,7 @@ function NextTokenLab() {
       <p className="eyebrow">The statistical nature of language models</p>
       <h1>Watch a model choose what comes next.</h1>
       <a className={`lede lesson-link ${lessonFading ? 'fading' : ''}`} href={`#lesson-${currentLesson.id}`} onBlur={() => setLessonPaused(false)} onClick={() => setExpandedLessonId(currentLesson.id)} onFocus={() => setLessonPaused(true)} onMouseEnter={() => setLessonPaused(true)} onMouseLeave={() => setLessonPaused(false)}>
-        <span>{currentLesson.thesis}</span>
+        <span><b>Lesson {lessonIndex + 1}:</b> {currentLesson.thesis}</span>
         <small>Explore this idea</small>
       </a>
     </section>
