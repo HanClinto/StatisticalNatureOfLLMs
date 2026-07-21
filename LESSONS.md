@@ -26,22 +26,7 @@ The interface reveals one generated token at a time. In the bear scenario, TinyS
 
 **Try it:** Build the prefix, compare its possible endings, then follow the scared and scary paths.
 
-## 3. The model offers chances; the sampler makes the pick
-
-**Thesis:** The model scores possible next tokens. The sampler can reshape those chances and uses a random draw to select one.
-
-This lesson combines three parts of one selection pipeline. First, seed 43 selects `sad` even though `sc` has the longest probability bar. Next, higher temperature moves the leading chances closer together without adding knowledge. Returning to seed 43 repeats `sad`, while seed 2 selects `excited` from the unchanged temperature-0.8 distribution.
-
-The presets change one control at a time:
-
-- **Odds → pick:** temperature 0.8 and seed 43 select a non-top token.
-- **Higher temperature:** temperature 1.8 visibly flattens the leading probabilities.
-- **Seed 43 again:** returning to the original settings repeats the original pick.
-- **Seed 2:** changing only the seed changes the pick while leaving the odds unchanged.
-
-**Try it:** Switch among the presets and watch which parts of the experiment change.
-
-## 4. One early choice can reshape the whole continuation
+## 3. One early choice can reshape the whole continuation
 
 **Thesis:** A chat window hides the other paths that were possible, and choosing one path changes every prediction that follows.
 
@@ -50,6 +35,22 @@ The first preset reveals four alternatives—`sc`, `excited`, `happy`, and `sad`
 The `sad` continuation is especially revealing: it treats the bear as the one feeling sad and has the robot try to cheer him up. One early choice changes how the model resolves the ambiguous “He,” then each subsequent prediction builds on that interpretation.
 
 **Try it:** Reveal the hidden alternatives, then use Next and Prev to flip among their four 35-token continuations.
+
+## 4. The model offers chances; the sampler makes the pick
+
+**Thesis:** The model scores possible next tokens. Temperature reshapes those chances before the sampler selects one.
+
+This lesson holds the prompt and seed fixed while generating 35 tokens at each of three temperatures. Because every selected token becomes context for the next prediction, temperature can influence not only one choice but the direction and coherence of the whole continuation.
+
+The presets change only temperature:
+
+- **Temperature 0:** always select the highest-scoring token, producing the model's most predictable path.
+- **Temperature 1.5:** give lower-ranked alternatives more influence, allowing less expected turns into the story.
+- **Temperature 3.0:** flatten the distribution much more strongly, so unusual selections can compound as generation continues.
+
+Temperature changes how the sampler uses the model's scores; it does not add knowledge or improve the underlying model.
+
+**Try it:** Use Next and Prev to compare the three 35-token continuations from the same starting point.
 
 ## 5. Models can disagree while using the same basic process
 
