@@ -4,13 +4,19 @@ Next Token Lab should teach a small number of ideas that learners can test direc
 
 The sequence moves from the basic mechanism to its consequences. It is written for a middle-school learner first, with enough precise language to support deeper discussion.
 
-## 1. A language model predicts what could come next
+## 1. A language model predicts what could come next, one piece at a time
 
-**Thesis:** A model looks at the text so far and gives several possible next pieces a chance.
+**Thesis:** A model looks at the text so far, scores several possible next pieces, and selects one before predicting again.
 
-The model does not retrieve a finished answer. It assigns probabilities to possible continuations, selects one piece, adds it to the text, and repeats. The bear scenario begins with several plausible emotions so learners can see this choice before learning more specialized vocabulary.
+The model does not retrieve a finished answer or commit an entire sentence at once. The bear scenario walks through one autoregressive cycle:
 
-**Try it:** Compare the chances for scared, excited, happy, and other possible continuations.
+- **Possible next pieces:** scared, excited, happy, and other continuations receive probabilities, but only the next token is selected now.
+- **Commit one piece:** the selected token joins this generation path. Standard generation does not revise earlier tokens unless the surrounding software edits or restarts the sequence.
+- **Predict again:** the model uses the changed context to calculate another next-token distribution.
+
+The model may assign probabilities based on patterns that extend beyond the immediate token, but later tokens have not yet been selected. This distinction avoids implying that the model has no expectations about later text while preserving the important fact that generation commits one piece at a time.
+
+**Try it:** Use Next and Prev to move through one prediction cycle.
 
 ## 2. Models build text from tokens, not always whole words
 

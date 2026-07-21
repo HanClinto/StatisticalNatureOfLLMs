@@ -12,6 +12,7 @@ Try it at [hanclinto.github.io/StatisticalNatureOfLLMs](https://hanclinto.github
 - Adjust temperature and seeds to compare predictable, varied, and repeatable sampling.
 - Use each lesson's **Show me** action or labeled scenario presets to add a controlled example and open a dismissible callout over the relevant part of the lab.
 - Compare temperature, seeds, and base models with presets that change one experimental variable at a time.
+- Move through multi-part lesson callouts with **Prev** and **Next**, and link directly to any lesson using its URL hash.
 
 ## Models
 

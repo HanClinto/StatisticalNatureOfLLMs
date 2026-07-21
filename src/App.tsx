@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, BrainCircuit, Check, Database, Eye, GitBranch, LoaderCircle, Pencil, RotateCcw, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BrainCircuit, Check, Database, Eye, GitBranch, LoaderCircle, Pencil, RotateCcw, Sparkles, Trash2, X } from 'lucide-react';
 import { clearModelCache, loadModel, predictNextToken } from './inference';
 import type { TokenCandidate } from './inference';
 import { LESSONS } from './lessons';
@@ -58,11 +58,15 @@ interface GuideCalloutState {
   target: import('./lessons').LessonTarget;
   title: string;
   body: string;
+  lessonId?: string;
+  scenarioIndex?: number;
+  scenarioCount?: number;
 }
 
-function GuideCallout({ guide, target, onDismiss }: { guide: GuideCalloutState | null; target: GuideCalloutState['target']; onDismiss: () => void }) {
+function GuideCallout({ guide, target, onDismiss, onNavigate }: { guide: GuideCalloutState | null; target: GuideCalloutState['target']; onDismiss: () => void; onNavigate: (offset: number) => void }) {
   if (guide?.target !== target) return null;
-  return <div className="guide-callout" role="status"><span className="guide-arrow" /><div><strong>{guide.title}</strong><p>{guide.body}</p></div><button aria-label="Dismiss lesson callout" onClick={onDismiss} title="Dismiss" type="button"><X size={15} /></button></div>;
+  const hasNavigation = guide.scenarioIndex !== undefined && (guide.scenarioCount ?? 0) > 1;
+  return <div className="guide-callout" role="status"><span className="guide-arrow" /><div><strong>{guide.title}</strong><p>{guide.body}</p></div><button aria-label="Dismiss lesson callout" className="guide-close" onClick={onDismiss} title="Dismiss" type="button"><X size={15} /></button>{hasNavigation && <div className="guide-actions"><button disabled={guide.scenarioIndex === 0} onClick={() => onNavigate(-1)} type="button"><ArrowLeft size={13} /> Prev</button><span>{guide.scenarioIndex! + 1} of {guide.scenarioCount}</span><button disabled={guide.scenarioIndex === guide.scenarioCount! - 1} onClick={() => onNavigate(1)} type="button">Next <ArrowRight size={13} /></button></div>}</div>;
 }
 
 function applyTemperature(candidates: TokenCandidate[], temperature: number) {
@@ -116,7 +120,10 @@ function NextTokenLab() {
   const [lessonIndex, setLessonIndex] = useState(0);
   const [lessonPaused, setLessonPaused] = useState(false);
   const [lessonFading, setLessonFading] = useState(false);
-  const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null);
+  const [expandedLessonId, setExpandedLessonId] = useState<string | null>(() => {
+    const lessonId = window.location.hash.replace(/^#lesson-/, '');
+    return LESSONS.some((lesson) => lesson.id === lessonId) ? lessonId : null;
+  });
   const [activeDemoId, setActiveDemoId] = useState<string | null>(null);
   const [activeScenarioKey, setActiveScenarioKey] = useState<string | null>(null);
   const [guideCallout, setGuideCallout] = useState<GuideCalloutState | null>(null);
@@ -154,6 +161,25 @@ function NextTokenLab() {
       window.clearTimeout(changeTimer);
     };
   }, [lessonIndex, lessonPaused]);
+
+  useEffect(() => {
+    const openLinkedLesson = () => {
+      const lessonId = window.location.hash.replace(/^#lesson-/, '');
+      if (!LESSONS.some((lesson) => lesson.id === lessonId)) {
+        setExpandedLessonId(null);
+        return;
+      }
+      setExpandedLessonId(lessonId);
+      window.requestAnimationFrame(() => document.getElementById(`lesson-${lessonId}`)?.scrollIntoView({ block: 'start' }));
+    };
+    window.addEventListener('hashchange', openLinkedLesson);
+    window.addEventListener('popstate', openLinkedLesson);
+    openLinkedLesson();
+    return () => {
+      window.removeEventListener('hashchange', openLinkedLesson);
+      window.removeEventListener('popstate', openLinkedLesson);
+    };
+  }, []);
 
   useEffect(() => {
     if (!guideCallout) return;
@@ -399,9 +425,27 @@ function NextTokenLab() {
       setTemperature(demoTemperature);
       setFixedSeed(true);
       setSeed(demoSeed);
-      setGuideCallout({ target: demo.target, title: demo.title, body: demo.callout });
+      setGuideCallout({ target: demo.target, title: demo.title, body: demo.callout, lessonId: lesson.id, scenarioIndex: lesson.demo.scenarios ? scenarioIndex : undefined, scenarioCount: lesson.demo.scenarios?.length });
     } catch (caught) { setError(caught instanceof Error ? caught.message : String(caught)); }
     finally { setStatus('idle'); setActiveDemoId(null); }
+  }
+
+  function navigateGuide(offset: number) {
+    if (!guideCallout?.lessonId || guideCallout.scenarioIndex === undefined) return;
+    const lesson = LESSONS.find((item) => item.id === guideCallout.lessonId);
+    const nextScenario = guideCallout.scenarioIndex + offset;
+    if (!lesson?.demo.scenarios?.[nextScenario]) return;
+    void showLesson(lesson, nextScenario);
+  }
+
+  function toggleLesson(lessonId: string) {
+    if (expandedLessonId === lessonId) {
+      setExpandedLessonId(null);
+      window.history.pushState(null, '', '#explanations');
+      return;
+    }
+    setExpandedLessonId(lessonId);
+    window.history.pushState(null, '', `#lesson-${lessonId}`);
   }
 
   return <main>
@@ -423,12 +467,12 @@ function NextTokenLab() {
         <div className="section-heading"><span>01</span><h2>Choose a model</h2></div>
         <div className="guide-target model-list" data-guide-target="models">{MODELS.map((item) => <button className={`model-option ${modelId === item.id ? 'selected' : ''}`} disabled={status !== 'idle' || isEditingPrompt} key={item.id} onClick={() => { setModelId(item.id); setGuideCallout(null); }} type="button">
           <span className="model-name">{item.name}</span><span className="model-meta">{item.kind} · {item.size}</span><span className="model-description">{item.description}</span>
-        </button>)}<GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} target="models" /></div>
+        </button>)}<GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} onNavigate={navigateGuide} target="models" /></div>
         <div className="guide-target seed-control" data-guide-target="seed">
           <label className="seed-toggle"><input checked={fixedSeed} disabled={status !== 'idle' || isEditingPrompt} onChange={(event) => setFixedSeed(event.target.checked)} type="checkbox" /> Fixed seed</label>
           <input aria-label="Fixed sampling seed" disabled={!fixedSeed || status !== 'idle' || isEditingPrompt} id="seed" max={MAX_SEED} min="0" onChange={(event) => setSeed(Math.min(MAX_SEED, Math.max(0, Number(event.target.value))))} step="1" type="number" value={seed} />
           <p>{fixedSeed ? 'Same seed and settings, same pick.' : 'A fresh random seed for every pick.'}</p>
-          <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} target="seed" />
+          <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} onNavigate={navigateGuide} target="seed" />
         </div>
         <button className="load-button" disabled={status !== 'idle' || isEditingPrompt} onClick={handleLoad} type="button">
           {status === 'loading' ? <LoaderCircle className="spin" size={18} /> : <Database size={18} />}
@@ -445,14 +489,14 @@ function NextTokenLab() {
             <textarea autoFocus id="prompt" onChange={(event) => setPromptDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') setIsEditingPrompt(false); if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); savePrompt(); } }} rows={3} value={promptDraft} />
             <div className="prompt-editor-actions"><span>{activePath.length > 0 ? 'Enter saves this as another prompt root.' : 'Enter to save · Shift Enter for a new line.'}</span><button aria-label="Cancel prompt edit" onClick={() => setIsEditingPrompt(false)} title="Cancel" type="button"><X size={16} /></button><button aria-label="Save starting prompt" disabled={!promptDraft.trim()} onClick={savePrompt} title="Save prompt" type="button"><Check size={16} /></button></div>
           </div> : <><button className="prompt-text" onClick={beginPromptEdit} title="Edit starting prompt" type="button"><span>{prompt}</span><Pencil size={14} /></button>{activePath.map((node, index) => <button className={`story-token ${node.id === selectedNodeId ? 'selected' : ''} ${selectedIndex >= 0 && index > selectedIndex ? 'future' : ''}`} key={node.id} onClick={() => setSelectedNodeId(node.id)} title={`Inspect ${visibleToken(node.token)}`} type="button">{node.token}</button>)}{activePath.length === 0 && <em>Click the opening text to edit it, or load a model and step forward.</em>}</>}
-          <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} target="tokens" />
+          <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} onNavigate={navigateGuide} target="tokens" />
         </div>
         <div className="generation-controls">
           <div className="step-stack"><button className="step-button" disabled={status !== 'idle' || isEditingPrompt} onClick={handleStep} type="button">{status === 'thinking' ? <LoaderCircle className="spin" size={19} /> : <ArrowRight size={19} />}{isLoaded ? selectedNodeId === activeLeafId ? 'Step one token' : 'Branch from here' : 'Load model'}</button><div className="guide-target randomness-control" data-guide-target="temperature">
               <label className="temperature-label" htmlFor="temperature">Randomness <strong>{temperature.toFixed(1)}</strong></label>
               <input disabled={isEditingPrompt} id="temperature" max={MAX_TEMPERATURE} min="0" onChange={(event) => void handleTemperatureChange(Number(event.target.value))} step="0.1" type="range" value={temperature} />
               <div className="range-labels"><span>predictable</span><span>varied</span><span>chaotic</span></div>
-              <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} target="temperature" />
+              <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} onNavigate={navigateGuide} target="temperature" />
             </div></div><span>Click a generated token to inspect the odds that produced it. Later tokens turn gray but stay available.</span>
         </div>
         {error && <div className="error-message" role="alert">{error}</div>}
@@ -461,7 +505,7 @@ function NextTokenLab() {
           {candidates.length === 0 ? <div className="empty-probabilities"><div className="ghost-bars"><i /><i /><i /><i /></div><p>Step forward to reveal the next-token landscape.</p></div> : <div className="candidate-list">{candidates.map((candidate) => <button className={candidate.token === selectedToken ? 'sampled' : ''} key={`${candidate.token}-${candidate.logprob}`} onClick={() => chooseCandidate(candidate)} type="button">
             <code>{visibleToken(candidate.token) || '∅'}</code><span className="probability-track"><i style={{ width: `${Math.max(1, candidate.probability * 100)}%` }} /></span><strong>{(candidate.probability * 100).toFixed(1)}%</strong><small>log p {candidate.logprob.toFixed(2)}</small>{candidate.token === selectedToken && <b>viewing</b>}
           </button>)}</div>}
-          <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} target="probabilities" />
+          <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} onNavigate={navigateGuide} target="probabilities" />
         </section>
       </div>
       <aside className="guide-target branches" data-guide-target="tree">
@@ -484,7 +528,7 @@ function NextTokenLab() {
           return <div className="tree-node" key={node.id}><button className={`${runIds.has(selectedNodeId) ? 'selected' : ''} ${run.some((item) => activePathIds.has(item.id)) ? 'active-path' : ''} compact-run`} onClick={() => visitNode(runEnd.id)} title={compactText || visibleToken(node.token)} type="button"><span>{run.length} {run.length === 1 ? 'token' : 'tokens'}</span><p>{compactText || '∅'}</p></button>{orderedChildren.length > 0 && <div className={`tree-children ${orderedChildren.length === 1 ? 'continuation' : 'variations'}`}>{orderedChildren.map(renderNode)}</div>}</div>;
         })}</div>}</div>;
         })}</div>
-        <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} target="tree" />
+        <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} onNavigate={navigateGuide} target="tree" />
       </aside>
     </section>
     <section className="explanations" id="explanations">
@@ -496,11 +540,8 @@ function NextTokenLab() {
       <div className="lesson-list">
         {LESSONS.map((lesson, index) => {
           const demoModel = MODELS.find((item) => item.id === lesson.demo.modelId);
-          return <details id={`lesson-${lesson.id}`} key={lesson.id} onToggle={(event) => {
-          if (event.currentTarget.open) setExpandedLessonId(lesson.id);
-          else if (expandedLessonId === lesson.id) setExpandedLessonId(null);
-        }} open={expandedLessonId === lesson.id}>
-          <summary><span>{String(index + 1).padStart(2, '0')}</span><strong>{lesson.thesis}</strong></summary>
+          return <details id={`lesson-${lesson.id}`} key={lesson.id} open={expandedLessonId === lesson.id}>
+          <summary onClick={(event) => { event.preventDefault(); toggleLesson(lesson.id); }}><span>{String(index + 1).padStart(2, '0')}</span><strong>{lesson.thesis}</strong></summary>
           <div className="lesson-explanation"><p>{lesson.explanation}</p><p><b>Try it:</b> {lesson.experiment}</p>{lesson.demo.scenarios ? <div aria-label={`${lesson.thesis} presets`} className="scenario-buttons" role="group">{lesson.demo.scenarios.map((scenario, scenarioIndex) => {
             const scenarioKey = `${lesson.id}:${scenarioIndex}`;
             const isBuilding = activeDemoId === lesson.id && activeScenarioKey === scenarioKey;

@@ -43,10 +43,26 @@ const BEAR_PATHS: LessonDemoPath[] = [
 export const LESSONS: Lesson[] = [
   {
     id: 'predicts-next',
-    thesis: 'A language model predicts what could come next.',
-    explanation: 'It looks at the text so far and gives several possible next pieces a chance. One piece is selected, added to the text, and then the model predicts again.',
-    experiment: 'Compare the chances for scared, excited, happy, and other possible continuations.',
-    demo: { prompt: BEAR_PROMPT, target: 'probabilities', title: 'Several futures are possible', callout: 'At this point in the story, the model offered all of these possible next pieces. Each bar shows how strongly that piece fit the text so far.', steps: 0, paths: BEAR_PATHS, focusBranch: 0, focusToken: 0, seed: 42, temperature: 0.8 },
+    thesis: 'A language model predicts what could come next, one piece at a time.',
+    explanation: 'It looks at the text so far, scores possible next pieces, and selects one. That piece joins the context before the model predicts the following piece.',
+    experiment: 'Move through one prediction cycle: compare possible pieces, commit one, and predict again from the changed context.',
+    demo: {
+      prompt: BEAR_PROMPT,
+      target: 'probabilities',
+      title: 'Only the next piece is chosen now',
+      callout: 'Scared, excited, happy, and other continuations are possible, but this step selects only one next token. Later tokens have not been chosen yet.',
+      steps: 0,
+      paths: BEAR_PATHS,
+      focusBranch: 0,
+      focusToken: 0,
+      seed: 42,
+      temperature: 0.8,
+      scenarios: [
+        { label: 'Possible next pieces' },
+        { label: 'Commit one piece', target: 'tokens', title: 'The choice joins the context', callout: 'The token “ sc” is now committed to this path. Standard generation does not go back and rewrite it; changing it means editing or branching from an earlier point.', paths: [{ tokens: [' sc'], steps: 0 }], focusToken: 0 },
+        { label: 'Predict again', title: 'Then the model predicts again', callout: 'After “scared” joins the context, the model calculates a new distribution for the next token. Generation advances by repeating this cycle one piece at a time.', paths: [{ tokens: [' sc', 'ared'], steps: 1 }], focusToken: 2 },
+      ],
+    },
   },
   {
     id: 'tokens-are-pieces',
