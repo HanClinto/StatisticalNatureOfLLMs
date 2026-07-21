@@ -74,13 +74,6 @@ export const LESSONS: Lesson[] = [
     demo: { prompt: BEAR_PROMPT, target: 'tokens', title: 'One word, two model pieces', callout: 'We read “scared” as one word. This model produced it as two tokens: “ sc” and “ared.” Tokens are the pieces the model actually predicts.', steps: 0, paths: [BEAR_PATHS[0]], focusBranch: 0, focusToken: 1, seed: 42, temperature: 0.8 },
   },
   {
-    id: 'odds-follow-context',
-    thesis: 'The text so far changes what could come next.',
-    explanation: 'Every selected token becomes part of the model’s context. After scared, excited, or happy, the model sees a different story and calculates a different set of chances.',
-    experiment: 'Select each emotion’s branch and compare the next-token probability bars.',
-    demo: { prompt: BEAR_PROMPT, target: 'tree', title: 'One changed word, three new contexts', callout: 'Select each branch and compare its bars. “And” stays likely, but its percentage and the other choices change because the model is reading a different emotion.', steps: 0, paths: BEAR_PATHS.map((path) => ({ ...path, steps: 1 })), focusBranch: 0, focusToken: 2, seed: 42, temperature: 0.8 },
-  },
-  {
     id: 'sampler',
     thesis: 'The model offers chances; the sampler makes the pick.',
     explanation: 'The model scores possible next tokens. The sampler can reshape those chances with temperature, then uses a random draw to pick one. A seed makes that draw repeatable.',

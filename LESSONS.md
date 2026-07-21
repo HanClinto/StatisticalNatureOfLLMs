@@ -26,15 +26,7 @@ The interface reveals one generated token at a time. In the bear scenario, TinyS
 
 **Try it:** Inspect the two token buttons that form the single word scared.
 
-## 3. The text so far changes what could come next
-
-**Thesis:** After every selected token, the model calculates a new set of chances from the changed context.
-
-Scared, excited, and happy create three versions of the same story. The guided example generates one additional token after each emotion so selecting a branch reveals the probability list calculated immediately after that emotion.
-
-**Try it:** Select each emotion’s branch and compare the next-token probability bars.
-
-## 4. The model offers chances; the sampler makes the pick
+## 3. The model offers chances; the sampler makes the pick
 
 **Thesis:** The model scores possible next tokens. The sampler can reshape those chances and uses a random draw to select one.
 
@@ -49,7 +41,7 @@ The presets change one control at a time:
 
 **Try it:** Switch among the presets and watch which parts of the experiment change.
 
-## 5. One answer hides a tree of possible answers
+## 4. One answer hides a tree of possible answers
 
 **Thesis:** A chat window shows one path, but generation is really a branching tree of possible continuations.
 
@@ -57,7 +49,7 @@ At each step, many tokens could be chosen. Once one is selected, most interfaces
 
 **Try it:** Click an alternative candidate and watch a new branch appear.
 
-## 6. A small early choice can reshape everything that follows
+## 5. A small early choice can reshape everything that follows
 
 **Thesis:** Choosing one different token changes the context, which can change every later probability.
 
@@ -65,7 +57,7 @@ The model recalculates after each token. Four presets force only the first choic
 
 **Try it:** Use Next and Prev to flip among the four 35-token continuations.
 
-## 7. Models can disagree while using the same basic process
+## 6. Models can disagree while using the same basic process
 
 **Thesis:** Different models can assign different odds to the same prompt, even though they all generate one token at a time.
 
@@ -73,7 +65,7 @@ Training data, model size, and training goals shape the patterns a model learns.
 
 **Try it:** Switch between the TinyStories and SmolLM2 presets and compare their candidate lists.
 
-## 8. Likely is not the same as true
+## 7. Likely is not the same as true
 
 **Thesis:** A high probability means "this fits patterns the model learned," not "this is correct."
 
