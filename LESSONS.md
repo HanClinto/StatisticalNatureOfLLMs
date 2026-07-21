@@ -8,15 +8,17 @@ The sequence moves from the basic mechanism to its consequences. It is written f
 
 **Thesis:** A model looks at the text so far, scores several possible next pieces, and selects one before predicting again.
 
-The model does not retrieve a finished answer or commit an entire sentence at once. The robot scenario starts with a whole-word token so the visible progression is clear:
+The model does not retrieve a finished answer or commit an entire sentence at once. The robot scenario grows the continuation in increasingly large requests while exposing that they all use the same sequential process:
 
 - **Possible next pieces:** “a” and other continuations receive probabilities, but nothing has been committed yet.
-- **Predict after “a”:** the whole-word token “a” joins the context, then the model scores a new set of possibilities for what follows it. The selected next token and its probability panel make the changed distribution visible.
-- **Keep predicting:** the model repeatedly uses the changed context to select another token, building a longer continuation.
+- **Generate 1 token:** ` a` joins the context as one whole-word token.
+- **Generate 1 more:** the changed context produces a new probability distribution before another token is selected.
+- **Generate 5 more:** five tokens appear, but each one is added before the next prediction is made.
+- **Generate 20 more:** one action repeats next-token prediction 20 times, producing a longer continuation without generating a block of text all at once.
 
-The first selected token happens to be a whole word, but models actually generate tokens, which may also be word pieces or punctuation. The model may assign probabilities based on patterns that extend beyond the immediate token, but later tokens have not yet been selected.
+The first selected token happens to be a whole word, but models actually generate tokens, which may also be word pieces or punctuation. Whether we request 1, 5, 20, or 35 tokens, each token becomes context before the next one is predicted.
 
-**Try it:** Use Next and Prev to compare the initial choices with the new prediction made after “a.”
+**Try it:** Use Next and Prev to watch the same one-token cycle scale from a single step to a longer continuation.
 
 ## 2. Models build text from tokens, not always whole words
 

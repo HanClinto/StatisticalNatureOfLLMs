@@ -46,8 +46,8 @@ export const LESSONS: Lesson[] = [
   {
     id: 'predicts-next',
     thesis: 'A language model predicts what could come next, one piece at a time.',
-    explanation: 'It looks at the text so far, scores possible next tokens, and selects one. A token can be a word or a word piece; this example starts with a whole word so the progression is easy to see.',
-    experiment: 'Compare possible tokens, inspect the next prediction after “a” joins the context, and watch the model keep going.',
+    explanation: 'It looks at the text so far, scores possible next tokens, and selects one. Even when we request a long continuation, it still creates that text one token at a time.',
+    experiment: 'Start with one token, repeat once, then request 5 and 20 more to see that every apparent batch is the same next-token cycle repeated.',
     demo: {
       prompt: FIRST_PREDICTION_PROMPT,
       target: 'probabilities',
@@ -60,9 +60,11 @@ export const LESSONS: Lesson[] = [
       seed: 42,
       temperature: 0.8,
       scenarios: [
-        { label: 'Possible next pieces' },
-        { label: 'Predict after “a”', target: 'probabilities', title: 'The next prediction uses new context', callout: 'First, “ a” joined the context. The model then scored what could follow that changed text and selected the highlighted token. These are the odds for the prediction after “a,” not the original choices shown in Step 1.', paths: [{ tokens: [' a'], steps: 1 }], focusToken: 1 },
-        { label: 'Keep predicting', target: 'tokens', title: 'The cycle builds a continuation', callout: 'The model has repeated the same process several more times. Each new token joined the context before the model predicted the next one.', paths: [{ tokens: [' a'], steps: 7 }], focusToken: 7 },
+        { label: 'Possible next pieces', callout: 'The model gives “a” the highest probability, alongside other possible next tokens. Nothing has been committed yet; the story still ends at “discovered.” Select Next to generate one token.' },
+        { label: 'Generate 1 token', target: 'tokens', title: 'One token joins the context', callout: 'We selected “ a” and added that one token to the text. The context now ends at “discovered a.” Select Next to generate one more token.', focusToken: 0 },
+        { label: 'Generate 1 more', target: 'probabilities', title: 'The cycle repeats with new context', callout: 'Using the text that now included “ a,” the model scored a new set of possibilities and we selected the highlighted token. Select Next to generate five more tokens.', paths: [{ tokens: [' a'], steps: 1 }], focusToken: 1 },
+        { label: 'Generate 5 more', target: 'tokens', title: 'Five tokens still arrive one at a time', callout: 'We requested five more tokens, but they were not created as one block. Each token joined the context before the next set of possibilities was scored and another token was selected. Select Next to generate 20 more tokens.', paths: [{ tokens: [' a'], steps: 6 }], focusToken: 6 },
+        { label: 'Generate 20 more', target: 'tokens', title: 'A larger batch uses the same cycle', callout: 'The request produced 20 more tokens by repeating next-token prediction 20 times in sequence. No matter how much text we request at once, it is still created one token at a time.', paths: [{ tokens: [' a'], steps: 26 }], focusToken: 26 },
       ],
     },
   },
