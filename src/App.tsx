@@ -562,6 +562,7 @@ function NextTokenLab() {
         <section><h3>Built on</h3><p><a href="https://github.com/ngxson/wllama">wllama</a>, the browser binding for <a href="https://github.com/ggml-org/llama.cpp">llama.cpp</a>, with model files hosted by <a href="https://huggingface.co/">Hugging Face</a>.</p></section>
         <section><h3>Open models</h3><p>Thanks to Ronen Eldan and Yuanzhi Li for <a href="https://arxiv.org/abs/2305.07759">TinyStories</a>, and to the Hugging Face Smol Models team for <a href="https://huggingface.co/HuggingFaceTB/SmolLM2-135M">SmolLM2</a>.</p></section>
         <section><h3>Further reading & inspiration</h3><p><a href="https://karpathy.ai/zero-to-hero.html">Neural Networks: Zero to Hero</a> by Andrej Karpathy, and <a href="https://rruxandra.github.io/regression-to-the-mean.html">Regression to the Mean</a>.</p></section>
+        <p className="development-credit">Developed with <a href="https://github.com/features/copilot">GitHub Copilot</a> + GPT 5.6 Sol.</p>
       </div>
     </footer>
   </main>;
