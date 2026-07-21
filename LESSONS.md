@@ -54,7 +54,19 @@ Temperature changes how the sampler uses the model's scores; it does not add kno
 
 **Try it:** Use Next and Prev to compare the three 35-token continuations from the same starting point.
 
-## 5. Models can disagree while using the same basic process
+## 5. The model predicts language patterns, not physical randomness
+
+**Thesis:** The model's probabilities describe likely text continuations, not the outcomes of physical simulations or uniform random processes.
+
+A fair coin has a 50% physical chance of landing on either side. Given “I flipped a fair coin. It came up”, however, SmolLM2 assigns 74.9% to lowercase `heads` and 6.9% to lowercase `tails`. The model did not flip or observe a coin. It scored how the sentence was likely to continue based on learned language patterns.
+
+The number example makes the same distinction in a larger distribution. After “When people are asked to pick a random number between 1 and 10, the most common answer is ”, SmolLM2 gives `1` 35.3%, `2` 17.3%, `3` 16.3%, and `7` 2.1%. A uniform number picker would give every number 10%.
+
+These values are neither simulated randomness nor a direct frequency table of the training corpus. They are the conditional expectations learned by this particular model from its training objective and data.
+
+**Try it:** Compare the model's uneven language odds with the even distributions defined by a fair coin and a uniform number picker.
+
+## 6. Models can disagree while using the same basic process
 
 **Thesis:** Different models can assign different odds to the same prompt, even though they all generate one token at a time.
 
@@ -62,7 +74,7 @@ Training data, model size, and training goals shape the patterns a model learns.
 
 **Try it:** Switch between the TinyStories and SmolLM2 presets and compare their candidate lists.
 
-## 6. Likely is not the same as true
+## 7. Likely is not the same as true
 
 **Thesis:** A high probability means "this fits patterns the model learned," not "this is correct."
 
