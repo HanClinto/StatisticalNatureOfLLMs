@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, BrainCircuit, Check, Database, Eye, GitBranch, LoaderCircle, Pencil, RotateCcw, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BrainCircuit, Check, CodeXml, Database, Eye, GitBranch, LoaderCircle, Pencil, RotateCcw, Sparkles, Trash2, X } from 'lucide-react';
 import { clearModelCache, loadModel, predictNextToken } from './inference';
 import type { TokenCandidate } from './inference';
 import { LESSONS } from './lessons';
@@ -84,8 +84,8 @@ function applyTemperature(candidates: TokenCandidate[], temperature: number) {
 function FutureChatPage() {
   return <main className="future-page">
     <header className="topbar">
-      <a className="wordmark" href={import.meta.env.BASE_URL}><BrainCircuit size={22} /><span>Next Token Lab</span></a>
-      <div className="privacy-note"><Database size={15} /> Runs and stays in your browser</div>
+      <a className="wordmark" href={import.meta.env.BASE_URL}><BrainCircuit size={22} /><span>Lab 01 · Next-Token Prediction</span></a>
+      <div className="topbar-actions"><div className="privacy-note"><Database size={15} /> Runs and stays in your browser</div><a aria-label="View source code on GitHub" className="source-link" href="https://github.com/HanClinto/StatisticalNatureOfLLMs" rel="noreferrer" target="_blank" title="View source code on GitHub"><CodeXml size={17} /> <span>Source</span></a></div>
     </header>
     <section className="future-hero">
       <p className="eyebrow">A future interactive lesson</p>
@@ -451,8 +451,8 @@ function NextTokenLab() {
   return <main>
     {guideCallout && <button aria-label="Dismiss lesson guide" className="guide-backdrop" onClick={() => setGuideCallout(null)} type="button" />}
     <header className="topbar">
-      <a className="wordmark" href={import.meta.env.BASE_URL}><BrainCircuit size={22} /><span>Next Token Lab</span></a>
-      <div className="privacy-note"><Database size={15} /> Runs and stays in your browser</div>
+      <a className="wordmark" href={import.meta.env.BASE_URL}><BrainCircuit size={22} /><span>Lab 01 · Next-Token Prediction</span></a>
+      <div className="topbar-actions"><div className="privacy-note"><Database size={15} /> Runs and stays in your browser</div><a aria-label="View source code on GitHub" className="source-link" href="https://github.com/HanClinto/StatisticalNatureOfLLMs" rel="noreferrer" target="_blank" title="View source code on GitHub"><CodeXml size={17} /> <span>Source</span></a></div>
     </header>
     <section className="intro">
       <p className="eyebrow">The statistical nature of language models</p>
@@ -556,6 +556,14 @@ function NextTokenLab() {
       <a href={`${import.meta.env.BASE_URL}?page=chat-models`}>Visit the future lesson <ArrowRight size={17} /></a>
     </section>
     <section className="plain-language"><p className="eyebrow">Keep this distinction in view</p><div><h2>The model offers odds.</h2><h2>The decoder makes the pick.</h2></div><p>A high number means “this token fits patterns I learned.” It does not mean the token is true, wise, or even useful.</p></section>
+    <footer className="credits">
+      <div className="credits-heading"><p className="eyebrow">Credits</p><h2>Made possible by open work.</h2><p>This lab runs entirely in your browser because researchers, model builders, and open-source contributors shared their work.</p></div>
+      <div className="credit-groups">
+        <section><h3>Built on</h3><p><a href="https://github.com/ngxson/wllama">wllama</a>, the browser binding for <a href="https://github.com/ggml-org/llama.cpp">llama.cpp</a>, with model files hosted by <a href="https://huggingface.co/">Hugging Face</a>.</p></section>
+        <section><h3>Open models</h3><p>Thanks to Ronen Eldan and Yuanzhi Li for <a href="https://arxiv.org/abs/2305.07759">TinyStories</a>, and to the Hugging Face Smol Models team for <a href="https://huggingface.co/HuggingFaceTB/SmolLM2-135M">SmolLM2</a>.</p></section>
+        <section><h3>Further reading & inspiration</h3><p><a href="https://karpathy.ai/zero-to-hero.html">Neural Networks: Zero to Hero</a> by Andrej Karpathy, and <a href="https://rruxandra.github.io/regression-to-the-mean.html">Regression to the Mean</a>.</p></section>
+      </div>
+    </footer>
   </main>;
 }
 

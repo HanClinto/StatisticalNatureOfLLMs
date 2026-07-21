@@ -1,6 +1,6 @@
-# Lessons for Next Token Lab
+# Lessons for Lab 01: Next-Token Prediction
 
-Next Token Lab should teach a small number of ideas that learners can test directly in the interface. Each lesson begins with a plain-language claim, then points back to something visible or adjustable in the lab.
+Lab 01 should teach a small number of ideas that learners can test directly in the interface. Each lesson begins with a plain-language claim, then points back to something visible or adjustable in the lab.
 
 The sequence moves from the basic mechanism to its consequences. It is written for a middle-school learner first, with enough precise language to support deeper discussion.
 
