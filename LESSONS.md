@@ -8,13 +8,13 @@ The sequence moves from the basic mechanism to its consequences. It is written f
 
 **Thesis:** A model looks at the text so far, scores several possible next pieces, and selects one before predicting again.
 
-The model does not retrieve a finished answer or commit an entire sentence at once. The bear scenario walks through one autoregressive cycle:
+The model does not retrieve a finished answer or commit an entire sentence at once. The robot scenario starts with a whole-word token so the visible progression is clear:
 
-- **Possible next pieces:** scared, excited, happy, and other continuations receive probabilities, but only the next token is selected now.
-- **Commit one piece:** the selected token joins this generation path. Standard generation does not revise earlier tokens unless the surrounding software edits or restarts the sequence.
-- **Predict again:** the model uses the changed context to calculate another next-token distribution.
+- **Possible next pieces:** “a” and other continuations receive probabilities, but nothing has been committed yet.
+- **Commit one word:** the whole-word token “a” joins this generation path. Standard generation does not revise earlier tokens unless the surrounding software edits or restarts the sequence.
+- **Keep predicting:** the model repeatedly uses the changed context to select another token, building a longer continuation.
 
-The model may assign probabilities based on patterns that extend beyond the immediate token, but later tokens have not yet been selected. This distinction avoids implying that the model has no expectations about later text while preserving the important fact that generation commits one piece at a time.
+The first selected token happens to be a whole word, but models actually generate tokens, which may also be word pieces or punctuation. The model may assign probabilities based on patterns that extend beyond the immediate token, but later tokens have not yet been selected.
 
 **Try it:** Use Next and Prev to move through one prediction cycle.
 

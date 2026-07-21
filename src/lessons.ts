@@ -40,27 +40,29 @@ const BEAR_PATHS: LessonDemoPath[] = [
   { tokens: [' happy'], steps: 0 },
 ];
 
+const FIRST_PREDICTION_PROMPT = 'Once upon a time, a small robot discovered';
+
 export const LESSONS: Lesson[] = [
   {
     id: 'predicts-next',
     thesis: 'A language model predicts what could come next, one piece at a time.',
-    explanation: 'It looks at the text so far, scores possible next pieces, and selects one. That piece joins the context before the model predicts the following piece.',
-    experiment: 'Move through one prediction cycle: compare possible pieces, commit one, and predict again from the changed context.',
+    explanation: 'It looks at the text so far, scores possible next tokens, and selects one. A token can be a word or a word piece; this example starts with a whole word so the progression is easy to see.',
+    experiment: 'Compare possible tokens, commit the word “a,” and watch the model continue one token at a time.',
     demo: {
-      prompt: BEAR_PROMPT,
+      prompt: FIRST_PREDICTION_PROMPT,
       target: 'probabilities',
-      title: 'Only the next piece is chosen now',
-      callout: 'Scared, excited, happy, and other continuations are possible, but this step selects only one next token. Later tokens have not been chosen yet.',
+      title: 'Nothing has been committed yet',
+      callout: 'The model gives “a” the highest probability, alongside other possible next tokens. These are choices for the next token only; the story still ends at “discovered.”',
       steps: 0,
-      paths: BEAR_PATHS,
+      paths: [{ tokens: [' a'], steps: 0 }],
       focusBranch: 0,
-      focusToken: 0,
+      focusToken: -1,
       seed: 42,
       temperature: 0.8,
       scenarios: [
         { label: 'Possible next pieces' },
-        { label: 'Commit one piece', target: 'tokens', title: 'The choice joins the context', callout: 'The token “ sc” is now committed to this path. Standard generation does not go back and rewrite it; changing it means editing or branching from an earlier point.', paths: [{ tokens: [' sc'], steps: 0 }], focusToken: 0 },
-        { label: 'Predict again', title: 'Then the model predicts again', callout: 'After “scared” joins the context, the model calculates a new distribution for the next token. Generation advances by repeating this cycle one piece at a time.', paths: [{ tokens: [' sc', 'ared'], steps: 1 }], focusToken: 2 },
+        { label: 'Commit one word', target: 'tokens', title: 'The choice joins the context', callout: 'The token “ a” is now committed to this path, so the visible story has changed. This token happens to be a whole word; other tokens can be word pieces or punctuation.', focusToken: 0 },
+        { label: 'Keep predicting', target: 'tokens', title: 'The cycle builds a continuation', callout: 'The model has repeated the same process several more times. Each new token joined the context before the model predicted the next one.', paths: [{ tokens: [' a'], steps: 7 }], focusToken: 7 },
       ],
     },
   },

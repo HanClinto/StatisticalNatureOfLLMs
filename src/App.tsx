@@ -414,8 +414,8 @@ function NextTokenLab() {
 
       const focusPath = lessonPaths[demo.focusBranch ?? 0];
       const focusIndex = demo.focusToken ?? (focusPath?.length ?? 1) - 1;
-      const destinationId = focusPath?.[focusIndex] ?? frontier[0] ?? lessonRootId;
-      const activeLeaf = focusPath?.at(-1) ?? destinationId;
+      const destinationId = focusIndex < 0 ? lessonRootId : focusPath?.[focusIndex] ?? frontier[0] ?? lessonRootId;
+      const activeLeaf = focusIndex < 0 ? lessonRootId : focusPath?.at(-1) ?? destinationId;
       treeRef.current = { ...treeRef.current };
       selectedNodeRef.current = destinationId;
       setTree(treeRef.current);
