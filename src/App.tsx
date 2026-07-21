@@ -525,7 +525,8 @@ function NextTokenLab() {
           const compactText = run.map((item) => item.token).join('').trim();
           const orderedChildren = [...runEnd.children].sort((left, right) => Number(activePathIds.has(right)) - Number(activePathIds.has(left)));
           const runIds = new Set(run.map((item) => item.id));
-          return <div className="tree-node" key={node.id}><button className={`${runIds.has(selectedNodeId) ? 'selected' : ''} ${run.some((item) => activePathIds.has(item.id)) ? 'active-path' : ''} compact-run`} onClick={() => visitNode(runEnd.id)} title={compactText || visibleToken(node.token)} type="button"><span>{run.length} {run.length === 1 ? 'token' : 'tokens'}</span><p>{compactText || '∅'}</p></button>{orderedChildren.length > 0 && <div className={`tree-children ${orderedChildren.length === 1 ? 'continuation' : 'variations'}`}>{orderedChildren.map(renderNode)}</div>}</div>;
+          const isSelectedRun = runIds.has(selectedNodeId);
+          return <div className={`tree-node ${isSelectedRun ? 'guide-target' : ''}`} data-guide-target={isSelectedRun ? 'tree-path' : undefined} key={node.id}><button className={`${isSelectedRun ? 'selected' : ''} ${run.some((item) => activePathIds.has(item.id)) ? 'active-path' : ''} compact-run`} onClick={() => visitNode(runEnd.id)} title={compactText || visibleToken(node.token)} type="button"><span>{run.length} {run.length === 1 ? 'token' : 'tokens'}</span><p>{compactText || '∅'}</p></button>{isSelectedRun && <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} onNavigate={navigateGuide} target="tree-path" />}{orderedChildren.length > 0 && <div className={`tree-children ${orderedChildren.length === 1 ? 'continuation' : 'variations'}`}>{orderedChildren.map(renderNode)}</div>}</div>;
         })}</div>}</div>;
         })}</div>
         <GuideCallout guide={guideCallout} onDismiss={() => setGuideCallout(null)} onNavigate={navigateGuide} target="tree" />

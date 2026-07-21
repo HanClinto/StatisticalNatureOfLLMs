@@ -6,7 +6,7 @@ export interface Lesson {
   demo: LessonDemo;
 }
 
-export type LessonTarget = 'tokens' | 'probabilities' | 'tree' | 'temperature' | 'seed' | 'models';
+export type LessonTarget = 'tokens' | 'probabilities' | 'tree' | 'tree-path' | 'temperature' | 'seed' | 'models';
 
 export interface LessonDemoPath {
   tokens: string[];
@@ -115,7 +115,7 @@ export const LESSONS: Lesson[] = [
     experiment: 'Use Prev and Next to compare four 35-token continuations that differ only in their first selected token.',
     demo: {
       prompt: BEAR_PROMPT,
-      target: 'tree',
+      target: 'tree-path',
       title: 'The “sc” path',
       callout: 'After selecting “sc,” the model generated 35 more tokens. Compare this continuation with the other three paths; only the first selected token was forced to differ.',
       steps: 0,
