@@ -65,7 +65,7 @@ export const LESSONS: Lesson[] = [
       scenarios: [
         { label: 'Possible next pieces', callout: 'The model gives “a” the highest probability, alongside other possible next tokens. Nothing has been committed yet; the story still ends at “discovered.” Select Next to generate one token.' },
         { label: 'Generate 1 token', target: 'tokens', secondaryTargets: [], title: 'One token joins the context', callout: 'We selected “ a” and added that one token to the text. The context now ends at “discovered a.” Select Next to generate one more token.', focusToken: 0 },
-        { label: 'Generate 1 more', target: 'probabilities', secondaryTargets: ['selected-token'], title: 'The cycle repeats with new context', callout: 'Using the text that now included “ a,” the model scored a new set of possibilities and we selected the highlighted token. Select Next to generate five more tokens.', paths: [{ tokens: [' a'], steps: 1 }], focusToken: 1 },
+        { label: 'Generate 1 more', target: 'probabilities', secondaryTargets: ['tokens', 'selected-token'], title: 'The cycle repeats with new context', callout: 'Using the text that now included “ a,” the model scored a new set of possibilities and we selected the highlighted token. Select Next to generate five more tokens.', paths: [{ tokens: [' a'], steps: 1 }], focusToken: 1 },
         { label: 'Generate 5 more', target: 'tokens', secondaryTargets: [], title: 'Five tokens still arrive one at a time', callout: 'We requested five more tokens, but they were not created as one block. Each token joined the context before the next set of possibilities was scored and another token was selected. Select Next to generate 20 more tokens.', paths: [{ tokens: [' a'], steps: 6 }], focusToken: 6 },
         { label: 'Generate 20 more', target: 'tokens', secondaryTargets: [], title: 'A larger batch uses the same cycle', callout: 'The request produced 20 more tokens by repeating next-token prediction 20 times in sequence. No matter how much text we request at once, it is still created one token at a time.', paths: [{ tokens: [' a'], steps: 26 }], focusToken: 26 },
       ],
@@ -89,7 +89,7 @@ export const LESSONS: Lesson[] = [
       temperature: 0.8,
       scenarios: [
         { label: 'Build the prefix' },
-        { label: 'Compare endings', target: 'probabilities', secondaryTargets: ['selected-token'], title: 'One prefix, two possible words', callout: 'After “sc,” the model ranks “ared” highest, completing scared. It also offers “ary,” which completes scary. A token piece does not determine the whole word by itself.', focusToken: 1 },
+        { label: 'Compare endings', target: 'probabilities', secondaryTargets: ['tokens', 'selected-token'], title: 'One prefix, two possible words', callout: 'After “sc,” the model ranks “ared” highest, completing scared. It also offers “ary,” which completes scary. A token piece does not determine the whole word by itself.', focusToken: 1 },
         { label: 'scared path', target: 'tree-path', secondaryTargets: ['tokens'], title: 'Continue from scared', callout: 'With “ared” selected, scared becomes part of the context and the model builds from that version of the story.', paths: [{ tokens: [' sc', 'ared'], steps: 12 }], focusToken: 1 },
         { label: 'scary path', target: 'tree-path', secondaryTargets: ['tokens'], title: 'Continue from scary', callout: 'Selecting “ary” produces the grammatical phrase “He felt very scary,” then the model keeps predicting from it. The resulting story may not be coherent, but it is still a possible token path.', paths: [{ tokens: [' sc', 'ary'], steps: 12 }], focusToken: 1 },
       ],
@@ -150,7 +150,7 @@ export const LESSONS: Lesson[] = [
       modelId: 'smollm2-135m',
       prompt: 'I flipped a fair coin. It came up',
       target: 'probabilities',
-      secondaryTargets: ['selected-token'],
+      secondaryTargets: ['tokens', 'selected-token'],
       title: 'These are language odds, not coin odds',
       callout: 'A fair coin gives heads and tails equal physical chances. Here, lowercase “heads” gets ~75% while lowercase “tails” gets ~7%. The model did not flip or observe a coin. It predicted what a likely writer of similar text would write next, based on patterns learned during training.',
       steps: 0,
@@ -173,7 +173,7 @@ export const LESSONS: Lesson[] = [
     demo: {
       prompt: 'Once upon a time, a small robot discovered',
       target: 'probabilities',
-      secondaryTargets: ['selected-token'],
+      secondaryTargets: ['tokens', 'selected-token'],
       title: 'TinyStories expects a story object',
       callout: 'TinyStories gives “a” 80.1% here. This tiny model was trained especially on simple stories, so this prompt fits its specialty.',
       steps: 1,
@@ -190,6 +190,6 @@ export const LESSONS: Lesson[] = [
     thesis: 'Likely is not the same as true.',
     explanation: 'A high probability means that text fits patterns the model learned. It does not mean the text is correct, wise, or checked against reality.',
     experiment: 'Compare the model’s chance for Chicago with the much smaller chance it gives the correct answer, Springfield.',
-    demo: { modelId: 'smollm2-135m', prompt: 'Fact: The capital of Illinois is the city of', target: 'probabilities', secondaryTargets: ['selected-token'], title: 'Most likely is not most truthful', callout: 'Base SmolLM2 gives Chicago 48.7% here, while the correct answer, Springfield, gets only 1.4%. These bars measure predicted text, not checked facts.', steps: 0, paths: [{ tokens: [' Chicago'], steps: 0 }], focusBranch: 0, focusToken: 0, seed: 42, temperature: 0.8 },
+    demo: { modelId: 'smollm2-135m', prompt: 'Fact: The capital of Illinois is the city of', target: 'probabilities', secondaryTargets: ['tokens', 'selected-token'], title: 'Most likely is not most truthful', callout: 'Base SmolLM2 gives Chicago 48.7% here, while the correct answer, Springfield, gets only 1.4%. These bars measure predicted text, not checked facts.', steps: 0, paths: [{ tokens: [' Chicago'], steps: 0 }], focusBranch: 0, focusToken: 0, seed: 42, temperature: 0.8 },
   },
 ];
