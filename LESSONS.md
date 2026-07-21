@@ -28,13 +28,20 @@ Scared, excited, and happy create three versions of the same story. The guided e
 
 **Try it:** Select each emotion’s branch and compare the next-token probability bars.
 
-## 4. The model offers chances; a picking rule chooses one
+## 4. The model offers chances; the sampler makes the pick
 
-**Thesis:** A language model produces probabilities. A sampling rule, sometimes called a decoder, turns those probabilities into one selected token.
+**Thesis:** The model scores possible next tokens. The sampler can reshape those chances and uses a random draw to select one.
 
-The highest-probability token is not automatically chosen unless the picking rule is set to behave predictably. Keeping the model and the selection rule separate prevents the common misconception that a probability is already a decision.
+This lesson combines three parts of one selection pipeline. First, seed 43 selects `sad` even though `sc` has the longest probability bar. Next, higher temperature moves the leading chances closer together without adding knowledge. Returning to seed 43 repeats `sad`, while seed 2 selects `excited` from the unchanged temperature-0.8 distribution.
 
-**Try it:** Keep the same prompt and step more than once from the same position.
+The presets change one control at a time:
+
+- **Odds → pick:** temperature 0.8 and seed 43 select a non-top token.
+- **Higher temperature:** temperature 1.8 visibly flattens the leading probabilities.
+- **Seed 43 again:** returning to the original settings repeats the original pick.
+- **Seed 2:** changing only the seed changes the pick while leaving the odds unchanged.
+
+**Try it:** Switch among the presets and watch which parts of the experiment change.
 
 ## 5. One answer hides a tree of possible answers
 
@@ -52,23 +59,15 @@ The model recalculates after each token. Two branches that differ by one small p
 
 **Try it:** Branch near the beginning, then grow both paths several tokens.
 
-## 7. Temperature reshapes the odds; it does not add knowledge
+## 7. Models can disagree while using the same basic process
 
-**Thesis:** Temperature changes how strongly the decoder favors the model's top choices.
+**Thesis:** Different models can assign different odds to the same prompt, even though they all generate one token at a time.
 
-Low temperature concentrates the odds around likely tokens. Higher temperature spreads the odds toward less likely choices. It can make output more varied or surprising, but it does not teach the model new facts or make weak possibilities more truthful.
+Training data, model size, and training goals shape the patterns a model learns. The presets hold the prompt, temperature, and seed fixed while changing only the model. On the TinyStories-native prompt “Once upon a time, a small robot discovered”, TinyStories gives `a` 80.1%. SmolLM2 gives `a` 35.1% and `that` 20.7%.
 
-**Try it:** Move Randomness from predictable to chaotic and watch the same probability landscape change.
+**Try it:** Switch between the TinyStories and SmolLM2 presets and compare their candidate lists.
 
-## 8. Random choices can still be repeated
-
-**Thesis:** Sampling can produce different results from the same odds, while a fixed seed can make the same experiment repeatable.
-
-A random seed supplies the repeatable starting point for the sampler's sequence of picks. Fixing the seed is useful when comparing settings because it holds one source of variation steady. A fresh seed better demonstrates the range of paths available.
-
-**Try it:** Repeat a branch with fresh random seeds, then enable Fixed seed and repeat it again.
-
-## 9. Likely is not the same as true
+## 8. Likely is not the same as true
 
 **Thesis:** A high probability means "this fits patterns the model learned," not "this is correct."
 
@@ -77,14 +76,6 @@ The model is predicting text, not checking a fact against reality. Fluent, famil
 The guided example uses the base SmolLM2 135M model with the prompt “Fact: The capital of Illinois is the city of”. It gives `Chicago` 48.7%, while the correct answer, `Springfield`, gets only 1.4%. This keeps the comparison inside raw next-token prediction and makes the difference between statistical likelihood and factual accuracy directly visible.
 
 **Try it:** Compare the model’s chance for Chicago with the much smaller chance it gives Springfield.
-
-## 10. Models can disagree while using the same basic process
-
-**Thesis:** Different models can assign different odds to the same prompt, even though they all generate one token at a time.
-
-Training data, model size, and training goals shape the patterns a model learns. Changing models can change both the candidates and their probabilities. The mechanics remain recognizable even when the quality and character of the continuation differ.
-
-**Try it:** Use the same prompt and settings with two models and compare their candidate lists.
 
 ## Curriculum boundary
 

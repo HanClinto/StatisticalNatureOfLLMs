@@ -10,7 +10,8 @@ Try it at [hanclinto.github.io/StatisticalNatureOfLLMs](https://hanclinto.github
 - Choose alternatives, backtrack, and preserve multiple continuations in a story tree.
 - Keep multiple starting prompts as separate roots without discarding earlier work.
 - Adjust temperature and seeds to compare predictable, varied, and repeatable sampling.
-- Use each lesson's **Show me** action to add a fixed-model example and open a dismissible callout over the relevant part of the lab. Most use TinyStories; the factual-likelihood lesson identifies and loads base SmolLM2.
+- Use each lesson's **Show me** action or labeled scenario presets to add a controlled example and open a dismissible callout over the relevant part of the lab.
+- Compare temperature, seeds, and base models with presets that change one experimental variable at a time.
 
 ## Models
 

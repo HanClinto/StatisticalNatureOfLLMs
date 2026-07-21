@@ -13,6 +13,10 @@ export interface LessonDemoPath {
   steps: number;
 }
 
+export interface LessonDemoScenario extends Partial<Omit<LessonDemo, 'scenarios'>> {
+  label: string;
+}
+
 export interface LessonDemo {
   modelId?: string;
   prompt: string;
@@ -26,6 +30,7 @@ export interface LessonDemo {
   focusToken?: number;
   seed: number;
   temperature?: number;
+  scenarios?: LessonDemoScenario[];
 }
 
 const BEAR_PROMPT = 'Once upon a time, a small robot discovered a large bear. He felt very';
@@ -58,11 +63,25 @@ export const LESSONS: Lesson[] = [
     demo: { prompt: BEAR_PROMPT, target: 'tree', title: 'One changed word, three new contexts', callout: 'Select each branch and compare its bars. “And” stays likely, but its percentage and the other choices change because the model is reading a different emotion.', steps: 0, paths: BEAR_PATHS.map((path) => ({ ...path, steps: 1 })), focusBranch: 0, focusToken: 2, seed: 42, temperature: 0.8 },
   },
   {
-    id: 'model-and-decoder',
-    thesis: 'The model offers chances; a picking rule chooses one.',
-    explanation: 'The language model produces probabilities. A sampling rule, sometimes called a decoder, uses those probabilities to select one token, which may not be the most likely one.',
-    experiment: 'Keep the same prompt and step more than once from the same position.',
-    demo: { prompt: 'The little dragon opened the door and saw', target: 'probabilities', title: 'Odds first, selection second', callout: 'The bars are the model\'s offer. The green row is the sampler\'s pick. It can select a token other than the longest bar.', steps: 1, seed: 42 },
+    id: 'sampler',
+    thesis: 'The model offers chances; the sampler makes the pick.',
+    explanation: 'The model scores possible next tokens. The sampler can reshape those chances with temperature, then uses a random draw to pick one. A seed makes that draw repeatable.',
+    experiment: 'Switch among the presets to separate the model’s odds, temperature, and the seeded draw.',
+    demo: {
+      prompt: BEAR_PROMPT,
+      target: 'probabilities',
+      title: 'The longest bar did not win',
+      callout: 'The model ranked “sc” highest at 12.0%, but the sampler picked “sad” at 7.7%. The odds are an offer, not a decision.',
+      steps: 1,
+      seed: 43,
+      temperature: 0.8,
+      scenarios: [
+        { label: 'Odds → pick' },
+        { label: 'Higher temperature', target: 'temperature', title: 'Temperature flattens the odds', callout: 'At 1.8, the leading chances move closer together. Temperature reshapes the sampler’s odds; it does not add knowledge.', temperature: 1.8 },
+        { label: 'Seed 43 again', target: 'seed', title: 'The same draw repeats', callout: 'Back at temperature 0.8, seed 43 picks “sad” again from the same odds. A fixed seed makes the random draw reproducible.', seed: 43, temperature: 0.8 },
+        { label: 'Seed 2', target: 'seed', title: 'New seed, new pick', callout: 'The odds stayed the same, but seed 2 picked “excited.” A seed controls the draw, not the model’s knowledge.', seed: 2, temperature: 0.8 },
+      ],
+    },
   },
   {
     id: 'hidden-tree',
@@ -79,18 +98,23 @@ export const LESSONS: Lesson[] = [
     demo: { prompt: BEAR_PROMPT, target: 'tree', title: 'The emotion changes what follows', callout: 'These paths differ first at scared, excited, or happy. From there, each choice pulls the continuing story in a different direction.', steps: 0, paths: BEAR_PATHS.map((path) => ({ ...path, steps: 7 })), focusBranch: 0, seed: 42, temperature: 0.8 },
   },
   {
-    id: 'temperature',
-    thesis: 'Temperature reshapes the odds; it does not add knowledge.',
-    explanation: 'Low temperature favors the strongest candidates. Higher temperature gives less likely candidates more room, making output more varied but not more informed or true.',
-    experiment: 'Move Randomness from predictable to chaotic and watch the probability bars change.',
-    demo: { prompt: 'The friendly robot wanted to help, so it', target: 'temperature', title: 'Randomness reshapes these odds', callout: 'Move this slider and watch probability move toward or away from lower-ranked choices. The model has not learned anything new.', steps: 1, seed: 42, temperature: 1.8 },
-  },
-  {
-    id: 'random-seeds',
-    thesis: 'Random choices can still be repeated.',
-    explanation: "Sampling can choose different paths from the same odds. A fixed seed repeats the sampler's sequence, making an experiment easier to reproduce.",
-    experiment: 'Try fresh random seeds, then enable Fixed seed and repeat the same branch.',
-    demo: { prompt: 'At the edge of the forest, Mia heard', target: 'seed', title: 'A seed controls the repeatable draw', callout: 'This example used seed 42. Running the same prompt with the same settings repeats the draw; changing the seed can select another path.', steps: 1, branches: 2, seed: 42 },
+    id: 'models-disagree',
+    thesis: 'Models can disagree while using the same basic process.',
+    explanation: 'Training data, size, and training goals change the odds a model assigns. The candidates may differ, but generation still proceeds one token at a time.',
+    experiment: 'Switch models while keeping the story prompt, temperature, and seed fixed.',
+    demo: {
+      prompt: 'Once upon a time, a small robot discovered',
+      target: 'probabilities',
+      title: 'TinyStories expects a story object',
+      callout: 'TinyStories gives “a” 80.1% here. This tiny model was trained especially on simple stories, so this prompt fits its specialty.',
+      steps: 1,
+      seed: 42,
+      temperature: 0.8,
+      scenarios: [
+        { label: 'TinyStories 15M' },
+        { label: 'SmolLM2 Base · 92 MB', modelId: 'smollm2-135m', title: 'SmolLM2 spreads its chances out', callout: 'On the identical prompt, SmolLM2 gives “a” 35.1% and “that” 20.7%. Different training produced a different distribution.' },
+      ],
+    },
   },
   {
     id: 'likely-not-true',
@@ -98,12 +122,5 @@ export const LESSONS: Lesson[] = [
     explanation: 'A high probability means that text fits patterns the model learned. It does not mean the text is correct, wise, or checked against reality.',
     experiment: 'Compare the model’s chance for Chicago with the much smaller chance it gives the correct answer, Springfield.',
     demo: { modelId: 'smollm2-135m', prompt: 'Fact: The capital of Illinois is the city of', target: 'probabilities', title: 'Most likely is not most truthful', callout: 'Base SmolLM2 gives Chicago 48.7% here, while the correct answer, Springfield, gets only 1.4%. These bars measure predicted text, not checked facts.', steps: 0, paths: [{ tokens: [' Chicago'], steps: 0 }], focusBranch: 0, focusToken: 0, seed: 42, temperature: 0.8 },
-  },
-  {
-    id: 'models-disagree',
-    thesis: 'Models can disagree while using the same basic process.',
-    explanation: 'Training data, size, and training goals change the odds a model assigns. The candidates may differ, but generation still proceeds one token at a time.',
-    experiment: 'Use the same prompt and settings with two models and compare their candidate lists.',
-    demo: { prompt: 'The small robot learned that kindness', target: 'models', title: 'This is TinyStories 15M\'s view', callout: 'These saved odds came from TinyStories 15M. Choose another model, return to this prompt root, and step from it to compare a different model\'s candidates.', steps: 1, seed: 42 },
   },
 ];

@@ -118,6 +118,7 @@ function NextTokenLab() {
   const [lessonFading, setLessonFading] = useState(false);
   const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null);
   const [activeDemoId, setActiveDemoId] = useState<string | null>(null);
+  const [activeScenarioKey, setActiveScenarioKey] = useState<string | null>(null);
   const [guideCallout, setGuideCallout] = useState<GuideCalloutState | null>(null);
   const nextNodeId = useRef(1);
   const treeRef = useRef(tree);
@@ -292,28 +293,31 @@ function NextTokenLab() {
     finally { setStatus('idle'); }
   }
 
-  async function showLesson(lesson: (typeof LESSONS)[number]) {
+  async function showLesson(lesson: (typeof LESSONS)[number], scenarioIndex = 0) {
     if (status !== 'idle') return;
+    const scenario = lesson.demo.scenarios?.[scenarioIndex];
+    const demo = { ...lesson.demo, ...scenario };
+    setActiveScenarioKey(`${lesson.id}:${scenarioIndex}`);
     setActiveDemoId(lesson.id); setStatus('loading'); setError(null); setGuideCallout(null); setIsEditingPrompt(false);
     try {
-      const demoModel = MODELS.find((item) => item.id === lesson.demo.modelId) ?? MODELS[0];
+      const demoModel = MODELS.find((item) => item.id === demo.modelId) ?? MODELS[0];
       setModelId(demoModel.id);
       await loadModel(demoModel, setProgress);
       setLoadedModelId(demoModel.id);
 
-      let lessonRootId = rootIdsRef.current.find((id) => treeRef.current[id]?.prompt === lesson.demo.prompt);
+      let lessonRootId = rootIdsRef.current.find((id) => treeRef.current[id]?.prompt === demo.prompt);
       if (!lessonRootId) {
         lessonRootId = `root-${nextNodeId.current++}`;
-        treeRef.current = { ...treeRef.current, [lessonRootId]: newRoot(lessonRootId, lesson.demo.prompt) };
+        treeRef.current = { ...treeRef.current, [lessonRootId]: newRoot(lessonRootId, demo.prompt) };
         rootIdsRef.current = [...rootIdsRef.current, lessonRootId];
         setTree(treeRef.current);
         setRootIds(rootIdsRef.current);
       }
 
       let frontier = [lessonRootId];
-      const branchCount = lesson.demo.branches ?? 1;
-      const demoSeed = lesson.demo.seed;
-      const demoTemperature = lesson.demo.temperature ?? 0.8;
+      const branchCount = demo.branches ?? 1;
+      const demoSeed = demo.seed;
+      const demoTemperature = demo.temperature ?? 0.8;
       const addPrediction = async (sourceId: string, requestedToken?: string) => {
         const sourceTree = treeRef.current;
         const source = sourceTree[sourceId];
@@ -337,8 +341,8 @@ function NextTokenLab() {
       };
 
       const lessonPaths: string[][] = [];
-      if (lesson.demo.paths) {
-        for (const path of lesson.demo.paths) {
+      if (demo.paths) {
+        for (const path of demo.paths) {
           let sourceId = lessonRootId;
           const nodeIds: string[] = [];
           for (const token of path.tokens) {
@@ -354,7 +358,7 @@ function NextTokenLab() {
         frontier = lessonPaths.map((path) => path.at(-1) ?? lessonRootId);
       }
 
-      for (let depth = 0; !lesson.demo.paths && depth < lesson.demo.steps; depth += 1) {
+      for (let depth = 0; !demo.paths && depth < demo.steps; depth += 1) {
         const nextFrontier: string[] = [];
         for (const sourceId of frontier) {
           const sourceTree = treeRef.current;
@@ -382,8 +386,8 @@ function NextTokenLab() {
         frontier = nextFrontier;
       }
 
-      const focusPath = lessonPaths[lesson.demo.focusBranch ?? 0];
-      const focusIndex = lesson.demo.focusToken ?? (focusPath?.length ?? 1) - 1;
+      const focusPath = lessonPaths[demo.focusBranch ?? 0];
+      const focusIndex = demo.focusToken ?? (focusPath?.length ?? 1) - 1;
       const destinationId = focusPath?.[focusIndex] ?? frontier[0] ?? lessonRootId;
       const activeLeaf = focusPath?.at(-1) ?? destinationId;
       treeRef.current = { ...treeRef.current };
@@ -395,7 +399,7 @@ function NextTokenLab() {
       setTemperature(demoTemperature);
       setFixedSeed(true);
       setSeed(demoSeed);
-      setGuideCallout({ target: lesson.demo.target, title: lesson.demo.title, body: lesson.demo.callout });
+      setGuideCallout({ target: demo.target, title: demo.title, body: demo.callout });
     } catch (caught) { setError(caught instanceof Error ? caught.message : String(caught)); }
     finally { setStatus('idle'); setActiveDemoId(null); }
   }
@@ -497,7 +501,11 @@ function NextTokenLab() {
           else if (expandedLessonId === lesson.id) setExpandedLessonId(null);
         }} open={expandedLessonId === lesson.id}>
           <summary><span>{String(index + 1).padStart(2, '0')}</span><strong>{lesson.thesis}</strong></summary>
-          <div className="lesson-explanation"><p>{lesson.explanation}</p><p><b>Try it:</b> {lesson.experiment}</p><button className="show-me-button" disabled={status !== 'idle'} onClick={() => void showLesson(lesson)} type="button">{activeDemoId === lesson.id ? <LoaderCircle className="spin" size={16} /> : <Eye size={16} />}{activeDemoId === lesson.id ? 'Building example...' : demoModel ? `Show me · ${demoModel.name} ${demoModel.size}` : 'Show me'}</button></div>
+          <div className="lesson-explanation"><p>{lesson.explanation}</p><p><b>Try it:</b> {lesson.experiment}</p>{lesson.demo.scenarios ? <div aria-label={`${lesson.thesis} presets`} className="scenario-buttons" role="group">{lesson.demo.scenarios.map((scenario, scenarioIndex) => {
+            const scenarioKey = `${lesson.id}:${scenarioIndex}`;
+            const isBuilding = activeDemoId === lesson.id && activeScenarioKey === scenarioKey;
+            return <button aria-pressed={activeScenarioKey === scenarioKey} className={activeScenarioKey === scenarioKey ? 'active' : ''} disabled={status !== 'idle'} key={scenario.label} onClick={() => void showLesson(lesson, scenarioIndex)} type="button">{isBuilding ? <LoaderCircle className="spin" size={15} /> : <Eye size={15} />}{isBuilding ? 'Building...' : scenario.label}</button>;
+          })}</div> : <button className="show-me-button" disabled={status !== 'idle'} onClick={() => void showLesson(lesson)} type="button">{activeDemoId === lesson.id ? <LoaderCircle className="spin" size={16} /> : <Eye size={16} />}{activeDemoId === lesson.id ? 'Building example...' : demoModel ? `Show me · ${demoModel.name} ${demoModel.size}` : 'Show me'}</button>}</div>
         </details>})}
       </div>
     </section>
