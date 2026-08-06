@@ -18,17 +18,33 @@ interface ContentLogprob {
 let engine: Wllama | null = null;
 let loadedModelId: string | null = null;
 
+function createEngine() {
+  const nextEngine = new Wllama({ default: wasmUrl }, { suppressNativeLog: true });
+  nextEngine.setCompat(null);
+  return nextEngine;
+}
+
 export async function loadModel(model: BrowserModel, onProgress: (fraction: number) => void) {
   if (loadedModelId === model.id && engine?.isModelLoaded()) return;
   if (engine) await engine.exit();
-  engine = new Wllama({ default: wasmUrl }, { suppressNativeLog: true });
-  engine.setCompat(null);
-  await engine.loadModelFromUrl(model.url, {
+  engine = createEngine();
+  const loadOptions = {
     n_ctx: model.context,
     n_batch: Math.min(256, model.context),
     useCache: true,
-    progressCallback: ({ loaded, total }) => onProgress(total > 0 ? loaded / total : 0),
-  });
+    progressCallback: ({ loaded, total }: { loaded: number; total: number }) => onProgress(total > 0 ? loaded / total : 0),
+  };
+  try {
+    await engine.loadModelFromUrl(model.url, loadOptions);
+  } catch (error) {
+    const isMissingCachedFile = error instanceof Error && error.message === `Model file not found: ${model.url}`;
+    if (!isMissingCachedFile) throw error;
+    await engine.cacheManager.delete(model.url);
+    await engine.exit();
+    engine = createEngine();
+    onProgress(0);
+    await engine.loadModelFromUrl(model.url, loadOptions);
+  }
   loadedModelId = model.id;
   onProgress(1);
 }
@@ -80,8 +96,7 @@ export async function predictNextToken(prompt: string, temperature: number, seed
 
 export async function clearModelCache() {
   if (!engine) {
-    engine = new Wllama({ default: wasmUrl }, { suppressNativeLog: true });
-    engine.setCompat(null);
+    engine = createEngine();
   }
   await engine.cacheManager.clear();
 }
