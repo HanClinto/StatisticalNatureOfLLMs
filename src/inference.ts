@@ -51,7 +51,7 @@ export async function loadModel(model: BrowserModel, onProgress: (fraction: numb
 
 export async function predictNextToken(prompt: string, temperature: number, seed: number, topCount = 8): Promise<TokenCandidate[]> {
   if (!engine?.isModelLoaded()) throw new Error('Load a model first.');
-  const response = await engine.createCompletion({
+  const completionOptions = {
     prompt,
     max_tokens: 1,
     temperature,
@@ -60,7 +60,9 @@ export async function predictNextToken(prompt: string, temperature: number, seed
     seed,
     logprobs: topCount,
     n_probs: topCount,
-  });
+    cache_prompt: true,
+  };
+  const response = await engine.createCompletion(completionOptions);
   const details = response.choices[0]?.logprobs;
   const content = (details as unknown as { content?: ContentLogprob[] } | null)?.content;
   if (Array.isArray(content) && content.length > 0) {
